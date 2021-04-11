@@ -31,6 +31,10 @@ Those objects are used as onion skinning and can be manipulated to check objects
 
 ## Changelog:
 
+0.3.0
+
+- first basic working version with local transform only
+
 0.2.0
 
 - changed UI system
