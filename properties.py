@@ -1,16 +1,20 @@
 import bpy
 from .onion import update_onion, update_opacity
 
+from bpy.props import BoolProperty, EnumProperty, IntProperty, StringProperty, CollectionProperty, PointerProperty
 
+class GPOP_PGT_frame_settings(bpy.types.PropertyGroup):
+    opacity : IntProperty(default=100, min=1, max=100, subtype='PERCENTAGE', options={'HIDDEN'}, update=update_opacity)
+    visibility : BoolProperty(default=True, options={'HIDDEN'}, update=update_opacity)
 
-class GPOP_PGT_settings(bpy.types.PropertyGroup) :
-    ## HIDDEN to hide the animatable dot thing
-    # stringprop : bpy.props.StringProperty(
-    #     name="str prop", description="", default="")# update=None, get=None, set=None
+# frames[0].add()
+# frames.remove(index)
 
-    # mode : bpy.props.EnumProperty(
-    #     name="bool prop", description="", default=False, options={'HIDDEN'})#options={'ANIMATABLE'},subtype='NONE', update=None, get=None, set=None
-    offset_mode : bpy.props.EnumProperty(
+class GPOP_PGT_settings(bpy.types.PropertyGroup):
+
+    activated : BoolProperty(name='Activate', default=False)
+
+    offset_mode : EnumProperty(
         name="Mode", description="Ghost offset mode", default='KEYS', options={'HIDDEN'}, update=None, get=None, set=None,
         items=(
             ('KEYS', 'Keys', 'Ghost number are keys', 1),   
@@ -18,95 +22,32 @@ class GPOP_PGT_settings(bpy.types.PropertyGroup) :
             ))
         # (key, label, descr, id[, icon])
 
-    before_num : bpy.props.IntProperty(
+    before_num : IntProperty(
         name="Before", description="Number of previous ghost displayed",
         default=2, min=1, max=10, soft_min=1, soft_max=10, step=1, options={'HIDDEN'}, update=update_onion)
     
-    after_num : bpy.props.IntProperty(
+    after_num : IntProperty(
         name="After", description="Number of next ghost displayed",
-        default=2, min=1, max=10, soft_min=1, soft_max=10, step=1, options={'HIDDEN'}, update=update_onion)
+        default=2, min=1, max=10, soft_min=1, soft_max=10, step=1, options={'HIDDEN'}, update=update_onion)    
+
+    # frames : CollectionProperty(type=GPOP_PGT_frame_settings)
+    pos_frames : CollectionProperty(type=GPOP_PGT_frame_settings)
+    neg_frames : CollectionProperty(type=GPOP_PGT_frame_settings)
     
-    activated : bpy.props.BoolProperty(name='Activate', default=True)
-
-    # opacity
-    o_p1: bpy.props.IntProperty(default=100, min=1, max=100, subtype='PERCENTAGE', options={'HIDDEN'}, update=update_opacity)
-    o_p2: bpy.props.IntProperty(default=100, min=1, max=100, subtype='PERCENTAGE', options={'HIDDEN'}, update=update_opacity)
-    o_p3: bpy.props.IntProperty(default=100, min=1, max=100, subtype='PERCENTAGE', options={'HIDDEN'}, update=update_opacity)
-    o_p4: bpy.props.IntProperty(default=100, min=1, max=100, subtype='PERCENTAGE', options={'HIDDEN'}, update=update_opacity)
-    o_p5: bpy.props.IntProperty(default=100, min=1, max=100, subtype='PERCENTAGE', options={'HIDDEN'}, update=update_opacity)
-    o_p6: bpy.props.IntProperty(default=100, min=1, max=100, subtype='PERCENTAGE', options={'HIDDEN'}, update=update_opacity)
-    o_p7: bpy.props.IntProperty(default=100, min=1, max=100, subtype='PERCENTAGE', options={'HIDDEN'}, update=update_opacity)
-    o_p8: bpy.props.IntProperty(default=100, min=1, max=100, subtype='PERCENTAGE', options={'HIDDEN'}, update=update_opacity)
-    o_p9: bpy.props.IntProperty(default=100, min=1, max=100, subtype='PERCENTAGE', options={'HIDDEN'}, update=update_opacity)
-    o_p10: bpy.props.IntProperty(default=100, min=1, max=100, subtype='PERCENTAGE', options={'HIDDEN'}, update=update_opacity)
-    o_general: bpy.props.IntProperty(default=50, min=1, max=100, subtype='PERCENTAGE', options={'HIDDEN'}, update=update_opacity)
-    o_n1: bpy.props.IntProperty(default=100, min=1, max=100, subtype='PERCENTAGE', options={'HIDDEN'}, update=update_opacity)
-    o_n2: bpy.props.IntProperty(default=100, min=1, max=100, subtype='PERCENTAGE', options={'HIDDEN'}, update=update_opacity)
-    o_n3: bpy.props.IntProperty(default=100, min=1, max=100, subtype='PERCENTAGE', options={'HIDDEN'}, update=update_opacity)
-    o_n4: bpy.props.IntProperty(default=100, min=1, max=100, subtype='PERCENTAGE', options={'HIDDEN'}, update=update_opacity)
-    o_n5: bpy.props.IntProperty(default=100, min=1, max=100, subtype='PERCENTAGE', options={'HIDDEN'}, update=update_opacity)
-    o_n6: bpy.props.IntProperty(default=100, min=1, max=100, subtype='PERCENTAGE', options={'HIDDEN'}, update=update_opacity)
-    o_n7: bpy.props.IntProperty(default=100, min=1, max=100, subtype='PERCENTAGE', options={'HIDDEN'}, update=update_opacity)
-    o_n8: bpy.props.IntProperty(default=100, min=1, max=100, subtype='PERCENTAGE', options={'HIDDEN'}, update=update_opacity)
-    o_n9: bpy.props.IntProperty(default=100, min=1, max=100, subtype='PERCENTAGE', options={'HIDDEN'}, update=update_opacity)
-    o_n10: bpy.props.IntProperty(default=100, min=1, max=100, subtype='PERCENTAGE', options={'HIDDEN'}, update=update_opacity)
-
-    # visibility
-    v_p1: bpy.props.BoolProperty(default=True, options={'HIDDEN'}, update=update_opacity)
-    v_p2: bpy.props.BoolProperty(default=True, options={'HIDDEN'}, update=update_opacity)
-    v_p3: bpy.props.BoolProperty(default=True, options={'HIDDEN'}, update=update_opacity)
-    v_p4: bpy.props.BoolProperty(default=True, options={'HIDDEN'}, update=update_opacity)
-    v_p5: bpy.props.BoolProperty(default=True, options={'HIDDEN'}, update=update_opacity)
-    v_p6: bpy.props.BoolProperty(default=True, options={'HIDDEN'}, update=update_opacity)
-    v_p7: bpy.props.BoolProperty(default=True, options={'HIDDEN'}, update=update_opacity)
-    v_p8: bpy.props.BoolProperty(default=True, options={'HIDDEN'}, update=update_opacity)
-    v_p9: bpy.props.BoolProperty(default=True, options={'HIDDEN'}, update=update_opacity)
-    v_p10: bpy.props.BoolProperty(default=True, options={'HIDDEN'}, update=update_opacity)
-    # v_general: bpy.props.BoolProperty(default=True, options={'HIDDEN'}, update=update_opacity)
-    v_n1: bpy.props.BoolProperty(default=True, options={'HIDDEN'}, update=update_opacity)
-    v_n2: bpy.props.BoolProperty(default=True, options={'HIDDEN'}, update=update_opacity)
-    v_n3: bpy.props.BoolProperty(default=True, options={'HIDDEN'}, update=update_opacity)
-    v_n4: bpy.props.BoolProperty(default=True, options={'HIDDEN'}, update=update_opacity)
-    v_n5: bpy.props.BoolProperty(default=True, options={'HIDDEN'}, update=update_opacity)
-    v_n6: bpy.props.BoolProperty(default=True, options={'HIDDEN'}, update=update_opacity)
-    v_n7: bpy.props.BoolProperty(default=True, options={'HIDDEN'}, update=update_opacity)
-    v_n8: bpy.props.BoolProperty(default=True, options={'HIDDEN'}, update=update_opacity)
-    v_n9: bpy.props.BoolProperty(default=True, options={'HIDDEN'}, update=update_opacity)
-    v_n10: bpy.props.BoolProperty(default=True, options={'HIDDEN'}, update=update_opacity)
-
-    # # Matrix move store ## Nope, should be at object level
-    # mat_p1: bpy.props.StringProperty(default='')
-    # mat_p2: bpy.props.StringProperty(default='')
-    # mat_p3: bpy.props.StringProperty(default='')
-    # mat_p4: bpy.props.StringProperty(default='')
-    # mat_p5: bpy.props.StringProperty(default='')
-    # mat_p6: bpy.props.StringProperty(default='')
-    # mat_p7: bpy.props.StringProperty(default='')
-    # mat_p8: bpy.props.StringProperty(default='')
-    # mat_p9: bpy.props.StringProperty(default='')
-    # mat_p10: bpy.props.StringProperty(default='')
-    # mat_n1: bpy.props.StringProperty(default='')
-    # mat_n2: bpy.props.StringProperty(default='')
-    # mat_n3: bpy.props.StringProperty(default='')
-    # mat_n4: bpy.props.StringProperty(default='')
-    # mat_n5: bpy.props.StringProperty(default='')
-    # mat_n6: bpy.props.StringProperty(default='')
-    # mat_n7: bpy.props.StringProperty(default='')
-    # mat_n8: bpy.props.StringProperty(default='')
-    # mat_n9: bpy.props.StringProperty(default='')
-    # mat_n10: bpy.props.StringProperty(default='')
+    o_general: IntProperty(default=50, min=1, max=100, subtype='PERCENTAGE', options={'HIDDEN'}, update=update_opacity)
 
 ### --- REGISTER ---
 
 classes=(
+GPOP_PGT_frame_settings,
 GPOP_PGT_settings,
 )
 
 def register():
     for cls in classes:
         bpy.utils.register_class(cls)
- 
-    bpy.types.Scene.gp_ons_setting = bpy.props.PointerProperty(type = GPOP_PGT_settings)
+    
+    bpy.types.Scene.gp_ons_setting = PointerProperty(type = GPOP_PGT_settings)
     # bpy.app.handlers.load_post.append(activator)
 
 def unregister():

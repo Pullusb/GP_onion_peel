@@ -140,6 +140,7 @@ def clean_mods(gpob):
 @persistent
 def update_onion(self, context):
     # t0 = time()
+
     scene = context.scene
     ob = bpy.context.object
     if not ob or ob.type != 'GPENCIL' or ob.name.startswith('.peel'):
@@ -179,6 +180,11 @@ def update_onion(self, context):
     opacity_factor = settings.o_general / 100
     gprev = settings.before_num
     gnext = settings.after_num
+
+    for _ in range(gprev - len(settings.neg_frames) + 1):
+        f = settings.neg_frames.add()
+    for _ in range(gnext - len(settings.pos_frames) + 1):
+        f = settings.pos_frames.add()
 
     # if setting.offset_mode == 'FRAMES':
     #     pos = get_keys(ob)
@@ -225,7 +231,16 @@ def update_onion(self, context):
         ## all asked limited by scanned number
         for num in [-i for i in range(1,gprev+1)][len(previous)-1::-1] + [i for i in range(1,gnext+1)][:len(following)]:
             absnum = abs(num)
-            side = f'p{absnum}' if num < 0 else f'n{num}'
+            mark = None
+            if num < 0:
+                fsetting = settings.neg_frames[abs(num)]
+                if absnum < len(previous):   
+                    mark = previous[num]
+            else:
+                fsetting = settings.pos_frames[num]
+                if absnum < len(following):
+                    mark = following[num-1]
+
             # get / create the peel object
             peel_name = f'{to_peel_name(ob.name)} {num}'
             used.append(peel)
@@ -234,19 +249,12 @@ def update_onion(self, context):
                 peel = bpy.data.objects.new(peel_name, ob.data)
                 peel.hide_select = True
                 peel_col.objects.link(peel)
-            
+            peel['frame'] = num
+
             peel.matrix_world = mat
             
             pgm = peel.grease_pencil_modifiers
 
-            # calculate offset from current to prev
-            mark = None
-            if num < 0:
-                if absnum < len(previous):   
-                    mark = previous[num]
-            else:
-                if absnum < len(following):
-                    mark = following[num-1]
 
             # hide and skip non displayed onion layer of out for range ones
             if not mark or not l.use_onion_skinning:
@@ -266,7 +274,7 @@ def update_onion(self, context):
                 tint = peel.grease_pencil_modifiers.new('peel_color','GP_TINT')
                 tint.factor = 1.0
                 tint.show_expanded = False
-                if peel_name.split()[-1].startswith('-'):
+                if peel['frame'] < 0:
                     tint.color = ob.data.before_color
                 else:
                     tint.color = ob.data.after_color
@@ -288,7 +296,7 @@ def update_onion(self, context):
                 mod_opa.normalize_opacity = True
                 mod_opa.layer = info
                 mod_opa.show_expanded = False
-            mod_opa.factor = getattr(settings, f'o_{side}') / 100 * opacity_factor
+            mod_opa.factor = fsetting.opacity / 100 * opacity_factor
     
     for o in peel_col.objects:
         if o not in used:
@@ -309,22 +317,24 @@ def update_opacity(self, context):
     opacity_factor = settings.o_general / 100
 
     for o in peel_col.objects:
-        num = o.name.split()[-1]
-        ident = f'p{num[1:]}' if int(num) < 0 else f'n{num}'
-        vis = getattr(settings, f'v_{ident}')
-        # inverse
-        o.hide_viewport = not vis
-        opa = getattr(settings, f'o_{ident}')
-        if not opa:
+        num = o['frame']
+        if num < 0:
+            fsetting = settings.neg_frames[abs(num)]
+        else:
+            fsetting = settings.pos_frames[num]
+        
+        o.hide_viewport = not fsetting.visibility
+
+        if not fsetting.opacity:
             continue
        
         for m in o.grease_pencil_modifiers:
             if m.type == 'GP_OPACITY':
                 if m.factor == 0:
                     continue
-                m.factor = opa / 100 * opacity_factor
+                m.factor = fsetting.opacity / 100 * opacity_factor
 
-
+""" 
 def generate_onion_peels(context):
     t0 = time()
     ob = context.object
@@ -396,4 +406,4 @@ def generate_onion_peels(context):
     update_onion(context.scene)
 
     print(f'time {time()-t0:.2f}s')
-    return op_col, peel_col
+    return op_col, peel_col """

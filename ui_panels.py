@@ -54,6 +54,16 @@ class GPOP_PT_onion_skinning_ui(bpy.types.Panel):
                 row.prop(ob, 'show_in_front', text='', icon='XRAY')
                 # col.separator()
                 continue
+            
+            if i < 0:
+                if abs(i) > len(settings.neg_frames) - 1:
+                    continue
+                fsetting = settings.neg_frames[abs(i)]
+            else:
+                if i > len(settings.pos_frames) - 1:
+                    continue
+                fsetting = settings.pos_frames[i]
+            
             # if not peel:
             #     continue # create a GP place holder ?
 
@@ -69,9 +79,9 @@ class GPOP_PT_onion_skinning_ui(bpy.types.Panel):
             else:
                 row.operator('gp.onion_peel_tranform', text='', icon='DOT').peel_num = i
             # row.separator()
-            pid = f'p{abs(i)}' if i < 0 else f'n{i}'
-            row.prop(settings, f'o_{pid}', text='', slider=True)
-            row.prop(settings, f'v_{pid}', text='', icon='HIDE_OFF')
+            # pid = f'p{abs(i)}' if i < 0 else f'n{i}'
+            row.prop(fsetting, 'opacity', text='', slider=True)
+            row.prop(fsetting, 'visibility', text='', icon='HIDE_OFF')
 
             # (data, property, text, text_ctxt, translate, icon, expand, slider, toggle, icon_only, event, full_event, emboss, index, icon_value
 

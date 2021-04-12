@@ -53,6 +53,7 @@ class GPOP_OT_onion_skin_refresh(bpy.types.Operator):
         if not context.scene.gp_ons_setting.activated:
             context.scene.gp_ons_setting.activated = True
         
+        gpl = context.object.data.layers
         if self.full_refresh:
             # clear and recreate
             onion.clear_peels()
@@ -63,7 +64,6 @@ class GPOP_OT_onion_skin_refresh(bpy.types.Operator):
         
         else:
             onion.clean_peels()
-            gpl = context.object.data.layers
             if not [l for l in gpl if l.use_onion_skinning]: # Skip if no onion layers
                 self.report({'WARNING'}, 'All layers have onion skin toggled off')
                 return {'CANCELLED'}
@@ -90,9 +90,10 @@ class GPOP_OT_onion_peel_pyramid_fade(bpy.types.Operator):
         self.shift = event.shift
         return self.execute(context)
 
-    def change_opacity(self, context, i, pid_prefix):
-        pid = f'{pid_prefix}{i}'
-        current_opacity = getattr(self.settings, pid, 'opacity')
+    def change_opacity(self, context, scol, i):
+        # pid = f'{pid_prefix}{i}'
+        current_opacity = scol[abs(i)].opacity
+        # current_opacity = getattr(self.settings, pid, 'opacity')
         
         if self.shift:
             opacity = 100
@@ -107,13 +108,15 @@ class GPOP_OT_onion_peel_pyramid_fade(bpy.types.Operator):
         name = f'{onion.to_peel_name(self.ob.name)} {-i}'
         peel = context.scene.objects.get(name)
         if not peel:
-            setattr(self.settings, pid, opacity) # trigger modification through update
+            # setattr(self.settings, pid, opacity) # trigger modification through update
+            scol[abs(i)].opacity = opacity
             return
 
         restore = [m for m in context.object.grease_pencil_modifiers
             if m.type == 'GP_OPACITY' and m.factor == 0]
 
-        setattr(self.settings, pid, opacity) # trigger modification through update
+        # setattr(self.settings, pid, opacity) # trigger modification through update
+        scol[abs(i)].opacity = opacity
         
         for m in restore:
             m.factor = 0
@@ -125,10 +128,15 @@ class GPOP_OT_onion_peel_pyramid_fade(bpy.types.Operator):
         self.ob = context.object
         self.gpl = context.object.data.layers
 
+
         for i in range(1,self.before+1):
-            self.change_opacity(context, i, pid_prefix='o_p')
+            self.change_opacity(context, self.settings.neg_frames, i)
         for i in range(1,self.after+1):
-            self.change_opacity(context, i, pid_prefix='o_n')
+            self.change_opacity(context, self.settings.neg_frames, i)
+        # for i in range(1,self.before+1):
+        #     self.change_opacity(context, i, pid_prefix='o_p')
+        # for i in range(1,self.after+1):
+        #     self.change_opacity(context, i, pid_prefix='o_n')
 
         return {"FINISHED"}
 
