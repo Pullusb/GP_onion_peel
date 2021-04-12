@@ -104,15 +104,12 @@ class GPOP_OT_onion_peel_pyramid_fade(bpy.types.Operator):
                 opacity = int(100 - (i * (100 / (self.after + 1))))
         
         if current_opacity == opacity:
-            print('skip, current_opacity: ', current_opacity)
             return
-        print('opacity: ', opacity)
         
         # check current opacity level (if 0 dont change it)
         # restore opacity to 0 if it was there
 
         name = f'{onion.to_peel_name(self.ob.name)} {i}'
-        print('name: ', name)
         peel = context.scene.objects.get(name)
         if not peel:
             # setattr(self.settings, pid, opacity) # trigger modification through update
@@ -135,14 +132,11 @@ class GPOP_OT_onion_peel_pyramid_fade(bpy.types.Operator):
         self.ob = context.object
         self.gpl = context.object.data.layers
 
-        print('-----Opacity settings')
 
         for i in range(1,self.before+1):
-            print('before', i)
             self.change_opacity(context, self.settings.neg_frames, -i)
        
         for i in range(1,self.after+1):
-            print('after', i)
             self.change_opacity(context, self.settings.pos_frames, i)
 
         return {"FINISHED"}
