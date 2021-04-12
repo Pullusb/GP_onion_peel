@@ -24,17 +24,24 @@ Those objects are used as onion skinning and can be manipulated to check objects
 ## TODO:
 
 - entering edit mode should hide collection (else all objects are visible at once)
+- place peels slightly behind from camera (and from viewport ?)
 - refresh choices:
     - Add choice to refresh all object or only current
     - Choose if other objects Onion are to be masked
 - Apply matrix from evaluated object keys
-- Custom placement peel feature
+- Custom placement peel feature (outapeg)
+
+Bonus:
 - Filter by key type (EZ... I think)
-- Create direct frame offset mode and enable option
+- Create direct frame offset mode and show option in view
 
 -->
 
 ## Changelog:
+
+0.3.3
+
+- Better property organisation (Tx to Christophe Seux)
 
 0.3.1
 

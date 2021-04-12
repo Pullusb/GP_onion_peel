@@ -98,21 +98,28 @@ class GPOP_OT_onion_peel_pyramid_fade(bpy.types.Operator):
         if self.shift:
             opacity = 100
         else:
-            opacity = int(100 - (i * (100 / (self.before + 1))))
+            if i < 0:
+                opacity = int(100 - (abs(i) * (100 / (self.before + 1))))
+            else:
+                opacity = int(100 - (i * (100 / (self.after + 1))))
         
         if current_opacity == opacity:
+            print('skip, current_opacity: ', current_opacity)
             return
+        print('opacity: ', opacity)
         
         # check current opacity level (if 0 dont change it)
         # restore opacity to 0 if it was there
-        name = f'{onion.to_peel_name(self.ob.name)} {-i}'
+
+        name = f'{onion.to_peel_name(self.ob.name)} {i}'
+        print('name: ', name)
         peel = context.scene.objects.get(name)
         if not peel:
             # setattr(self.settings, pid, opacity) # trigger modification through update
             scol[abs(i)].opacity = opacity
             return
 
-        restore = [m for m in context.object.grease_pencil_modifiers
+        restore = [m for m in peel.grease_pencil_modifiers
             if m.type == 'GP_OPACITY' and m.factor == 0]
 
         # setattr(self.settings, pid, opacity) # trigger modification through update
@@ -128,15 +135,15 @@ class GPOP_OT_onion_peel_pyramid_fade(bpy.types.Operator):
         self.ob = context.object
         self.gpl = context.object.data.layers
 
+        print('-----Opacity settings')
 
         for i in range(1,self.before+1):
-            self.change_opacity(context, self.settings.neg_frames, i)
+            print('before', i)
+            self.change_opacity(context, self.settings.neg_frames, -i)
+       
         for i in range(1,self.after+1):
-            self.change_opacity(context, self.settings.neg_frames, i)
-        # for i in range(1,self.before+1):
-        #     self.change_opacity(context, i, pid_prefix='o_p')
-        # for i in range(1,self.after+1):
-        #     self.change_opacity(context, i, pid_prefix='o_n')
+            print('after', i)
+            self.change_opacity(context, self.settings.pos_frames, i)
 
         return {"FINISHED"}
 

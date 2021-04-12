@@ -1,14 +1,21 @@
 import bpy
 from .onion import update_onion, update_opacity
 
-from bpy.props import BoolProperty, EnumProperty, IntProperty, StringProperty, CollectionProperty, PointerProperty
+from bpy.props import BoolProperty, EnumProperty, \
+    IntProperty, FloatVectorProperty, CollectionProperty, \
+    PointerProperty, StringProperty
 
 class GPOP_PGT_frame_settings(bpy.types.PropertyGroup):
     opacity : IntProperty(default=100, min=1, max=100, subtype='PERCENTAGE', options={'HIDDEN'}, update=update_opacity)
     visibility : BoolProperty(default=True, options={'HIDDEN'}, update=update_opacity)
 
-# frames[0].add()
-# frames.remove(index)
+    ## Tranforms need to be stored at object level since there can be multiple objects...
+    # matrix : FloatVectorProperty(subtype='MATRIX', size=16, options={'HIDDEN'}) # default=(0.0, 0.0, 0.0, 0.0), 
+    # transformed : BoolProperty(default=False) #Tell if a transform (matrix) is applied to the peel.
+    
+    ## works like this
+    # frames[0].add()
+    # frames.remove(index)
 
 class GPOP_PGT_settings(bpy.types.PropertyGroup):
 

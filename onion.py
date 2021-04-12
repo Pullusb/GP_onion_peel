@@ -234,11 +234,11 @@ def update_onion(self, context):
             mark = None
             if num < 0:
                 fsetting = settings.neg_frames[abs(num)]
-                if absnum < len(previous):   
+                if absnum < len(previous)+1:   
                     mark = previous[num]
             else:
                 fsetting = settings.pos_frames[num]
-                if absnum < len(following):
+                if absnum < len(following)+1:
                     mark = following[num-1]
 
             # get / create the peel object
