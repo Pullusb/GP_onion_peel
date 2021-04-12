@@ -16,20 +16,30 @@ Generate onion skin as individual `.peel` objects in a `.onion_peels` subcollect
 Those objects are used as onion skinning and can be manipulated to check objects
 ### Where ?
 
-`Sidebar` > `Gpencil` Tab 
+`Sidebar` > `Gpencil` Tab > `Onion Peel` Panel
 
 ---
 
 <!--
 ## TODO:
 
-- Fix skin problem
-- generate independant layer system
-- Scan only marked layer
+- entering edit mode should hide collection (else all objects are visible at once)
+- refresh choices:
+    - Add choice to refresh all object or only current
+    - Choose if other objects Onion are to be masked
+- Apply matrix from evaluated object keys
+- Custom placement peel feature
+- Filter by key type (EZ... I think)
+- Create direct frame offset mode and enable option
 
 -->
 
 ## Changelog:
+
+0.3.1
+
+- code: cleanup
+- interface for peel custom transform (wip)
 
 0.3.0
 

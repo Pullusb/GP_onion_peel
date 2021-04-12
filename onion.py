@@ -258,7 +258,8 @@ def update_onion(self, context):
                 mod_opa.layer = info
                 mod_opa.show_expanded = True
                 continue
-
+            
+            # COLOR
             tint = peel.grease_pencil_modifiers.get('peel_color')
             if not tint:
                 # if first creation initiate the tint
@@ -270,7 +271,7 @@ def update_onion(self, context):
                 else:
                     tint.color = ob.data.after_color
 
-            # time offset
+            # TIME OFFSET
             mod_time = pgm.get(f'{info}_time')
             if not mod_time:
                 mod_time = pgm.new(f'{info}_time','GP_TIME')
@@ -278,9 +279,9 @@ def update_onion(self, context):
                 mod_time.mode = 'FIX'
                 mod_time.layer = info
                 mod_time.show_expanded = False
-            # print('mark: ', mark)#dbg
             mod_time.offset = mark# - cur_frame
 
+            # OPACITY
             mod_opa = pgm.get(f'{info}_opacity')
             if not mod_opa:
                 mod_opa = pgm.new(f'{info}_opacity','GP_OPACITY')

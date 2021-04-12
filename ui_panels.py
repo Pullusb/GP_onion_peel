@@ -1,5 +1,4 @@
 import bpy
-
 class GPOP_PT_onion_skinning_ui(bpy.types.Panel):
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
@@ -12,6 +11,7 @@ class GPOP_PT_onion_skinning_ui(bpy.types.Panel):
             return
         settings = context.scene.gp_ons_setting
         layout = self.layout
+        # layout.use_property_split = True
         if ob.name.startswith('.peel_'):
             layout.label(text='- Peel object edit -')
             layout.label(text='Use transforms to place')
@@ -44,23 +44,34 @@ class GPOP_PT_onion_skinning_ui(bpy.types.Panel):
             if i == 0:
                 # col.separator()
                 row = col.row(align=True)
-                row.label(text='0', icon='REMOVE')
-                row.prop(settings, 'o_general', text='', slider=True)
+                row.label(text='0')
+                # row.label(text='0', icon='REMOVE') # without transforms
+                # row.label(text='', icon='REMOVE')
+                # row.label(text='', icon='COLLAPSEMENU')
                 row.operator('gp.onion_peel_pyramid_fade', text='', icon='RIGHTARROW') # LINCURVE
+                row.prop(settings, 'o_general', text='', slider=True)
+                # row.prop(ob, 'hide_viewport', text='', icon='HIDE_OFF')
+                row.prop(ob, 'show_in_front', text='', icon='XRAY')
                 # col.separator()
                 continue
-            # peel = context.scene.objects.get(f'{ob.name} {i}')
             # if not peel:
             #     continue # create a GP place holder ?
 
+            peel = context.scene.objects.get(f'.peel{ob.name} {i}')
             row = col.row(align=True)
-            # CHECKBOX_DEHLT, CHECKBOX_HLT # TODO show/hide with checkboxes (more clear)
-            
-            # row.prop(peel.grease_pencil_modifiers['opacity'], 'factor', text='', slider=True)
-            row.label(text=str(i), icon='DOT') # TODO out of peg operator
+            # row = col.split(align=True, factor=0.2)
+            # CHECKBOX_DEHLT, CHECKBOX_HLT ? # show/hide with checkboxes (if more clear)
+
+            # row.label(text=str(i), icon='DOT') # basic dot
+            row.label(text=str(i))
+            if peel and hasattr(peel, 'is_transformed'):
+                row.operator('gp.reset_peel_transform', text='', icon='MESH_CIRCLE').peel_num = i # TRACKER, RADIOBUT_ON
+            else:
+                row.operator('gp.onion_peel_tranform', text='', icon='DOT').peel_num = i
+            # row.separator()
             pid = f'p{abs(i)}' if i < 0 else f'n{i}'
             row.prop(settings, f'o_{pid}', text='', slider=True)
-            row.prop(settings, f'v_{pid}', text='', icon = 'HIDE_OFF')
+            row.prop(settings, f'v_{pid}', text='', icon='HIDE_OFF')
 
             # (data, property, text, text_ctxt, translate, icon, expand, slider, toggle, icon_only, event, full_event, emboss, index, icon_value
 

@@ -74,6 +74,28 @@ class GPOP_PGT_settings(bpy.types.PropertyGroup) :
     v_n9: bpy.props.BoolProperty(default=True, options={'HIDDEN'}, update=update_opacity)
     v_n10: bpy.props.BoolProperty(default=True, options={'HIDDEN'}, update=update_opacity)
 
+    # # Matrix move store ## Nope, should be at object level
+    # mat_p1: bpy.props.StringProperty(default='')
+    # mat_p2: bpy.props.StringProperty(default='')
+    # mat_p3: bpy.props.StringProperty(default='')
+    # mat_p4: bpy.props.StringProperty(default='')
+    # mat_p5: bpy.props.StringProperty(default='')
+    # mat_p6: bpy.props.StringProperty(default='')
+    # mat_p7: bpy.props.StringProperty(default='')
+    # mat_p8: bpy.props.StringProperty(default='')
+    # mat_p9: bpy.props.StringProperty(default='')
+    # mat_p10: bpy.props.StringProperty(default='')
+    # mat_n1: bpy.props.StringProperty(default='')
+    # mat_n2: bpy.props.StringProperty(default='')
+    # mat_n3: bpy.props.StringProperty(default='')
+    # mat_n4: bpy.props.StringProperty(default='')
+    # mat_n5: bpy.props.StringProperty(default='')
+    # mat_n6: bpy.props.StringProperty(default='')
+    # mat_n7: bpy.props.StringProperty(default='')
+    # mat_n8: bpy.props.StringProperty(default='')
+    # mat_n9: bpy.props.StringProperty(default='')
+    # mat_n10: bpy.props.StringProperty(default='')
+
 ### --- REGISTER ---
 
 classes=(

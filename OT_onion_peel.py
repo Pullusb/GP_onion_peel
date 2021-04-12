@@ -132,6 +132,79 @@ class GPOP_OT_onion_peel_pyramid_fade(bpy.types.Operator):
 
         return {"FINISHED"}
 
+class GPOP_OT_onion_peel_tranform(bpy.types.Operator):
+    bl_idname = "gp.onion_peel_tranform"
+    bl_label = "Peel Transform"
+    bl_description = "Transform selected onion peel with native transform tools"
+    bl_options = {"REGISTER", "INTERNAL"}
+
+    @classmethod
+    def poll(cls, context):
+        return context.object and context.object.type == 'GPENCIL'
+
+    peel_num : bpy.props.IntProperty()
+
+    def execute(self, context):
+        if not self.peel_num:
+            self.report({'ERROR'}, f'Peel number is not valid : {self.peel_num}')
+            return {"CANCELLED"}
+
+        ob = context.object
+        peel_name =  f'{onion.to_peel_name(ob.name)} {self.peel_num}'
+        
+        peel = context.scene.objects.get(peel_name)
+        if not peel:
+            self.report({'ERROR'}, f'Could not find this Onion peel, it might no exists yet ! \nTry refreshing first.')
+            return {"CANCELLED"}
+
+        bpy.types.ViewLayer.gp_last_mode = context.mode
+        bpy.ops.object.mode_set(mode='OBJECT')
+        # make it selectable and set as active
+        peel.hide_select = False
+        ob.select_set(False)
+        context.view_layer.objects.active = peel
+        peel.select_set(True)
+
+        peel['is_transformed'] = True
+
+        return {"FINISHED"}
+
+class GPOP_OT_onion_reset_peel_transform(bpy.types.Operator):
+    bl_idname = "gp.reset_peel_transform"
+    bl_label = "Reset Peel Transform"
+    bl_description = "Reset the transform of selected onion peel"
+    bl_options = {"REGISTER", "INTERNAL"}
+
+    @classmethod
+    def poll(cls, context):
+        return context.object and context.object.type == 'GPENCIL'
+
+    peel_num : bpy.props.IntProperty()
+
+    def execute(self, context):
+        if not self.peel_num:
+            self.report({'ERROR'}, f'Peel number seems not valid : {self.peel_num}')
+            return {"CANCELLED"}
+
+        ob = context.object
+        peel_name =  f'{onion.to_peel_name(ob.name)} {self.peel_num}'
+        
+        peel = context.scene.objects.get(peel_name)
+        if not peel:
+            self.report({'ERROR'}, f'Could not find this Onion peel!\nTry refreshing')
+            return {"CANCELLED"}
+
+        # TODO RESET THE transform:
+        #   - by reading the frame in fixed time_offset
+        #   - evaluating the position from frame in source object (ob) fcurve
+        
+        ## local mode
+        peel.matrix_world = ob.matrix_world
+        del peel['is_transformed']
+        # peel['is_transformed'] = False # if native prop everywhere...
+
+        return {"FINISHED"}
+
 class GPOP_OT_onion_back_to_object(bpy.types.Operator):
     bl_idname = "gp.onion_back_to_object"
     bl_label = "Back to GP"
@@ -156,63 +229,27 @@ class GPOP_OT_onion_back_to_object(bpy.types.Operator):
         source = collec.name.replace('.onion_', '')
         source_ob = context.scene.objects.get(source)
         if not source_ob:
-            self.report(f'Could not find object named "{source}"')
+            self.report({'ERROR'}, f'Could not find object named "{source}"')
             return {"CANCELLED"}
+
         ob.hide_select = True
         context.view_layer.objects.active = source_ob
+        ob.select_set(False)
+        # restore mode
+        if hasattr(context.view_layer, 'gp_last_mode'):
+            bpy.ops.object.mode_set(mode=context.view_layer.gp_last_mode)
         return {"FINISHED"}
 
-
-
-class GPOP_OT_onion_skin_generate(bpy.types.Operator):
-    bl_idname = "gp.onion_peel_gen"
-    bl_label = "Activate Onion Skin"
-    bl_description = "Generate or reset Onion skinning"
-    bl_options = {"REGISTER", "UNDO"}
-
-    @classmethod
-    def poll(cls, context):
-        return context.object and context.object.type == 'GPENCIL'
-    
-    def invoke(self, context, event):
-        self.on_all = event.shift
-        return self.execute(context)
-
-    def execute(self, context):
-        ob = context.object
-        pos = onion.get_keys(ob)
-        context.scene.gp_ons_setting.activated = True
-        
-        ### Non needed here anymore
-        # num_to_display = 3
-        # # found previous and next pos:
-        # cur_frame = context.scene.frame_current
-        # # num 3 (so 3*2=6 +current = 7)
-        # all_previous = [f for f in pos if f <= cur_frame]
-        # all_following = [f for f in pos if f > cur_frame]
-        # previous = all_previous[-4:-1]
-        # current = previous[-1]
-        # following = all_following[:3]
-        
-        # print('previous: ', previous)
-        # print('current: ', current)
-        # print('following: ', following)
-
-        # Create all peels
-        onion.generate_onion_peels(context)
-        
-        # get  frame equal of just after current (if None, were past the end)
-        # next((f for f in pos if f >= current), None)
-        return {"FINISHED"}
 
 ### --- REGISTER ---
 
 classes=(
-GPOP_OT_onion_skin_generate,
 GPOP_OT_onion_skin_refresh,
 GPOP_OT_onion_skin_delete,
-GPOP_OT_onion_back_to_object,
 GPOP_OT_onion_peel_pyramid_fade,
+GPOP_OT_onion_peel_tranform,
+GPOP_OT_onion_back_to_object,
+GPOP_OT_onion_reset_peel_transform,
 )
 
 # TODO Add handler on frame post to refresh the timeline offset
