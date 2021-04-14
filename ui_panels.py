@@ -12,11 +12,24 @@ class GPOP_PT_onion_skinning_ui(bpy.types.Panel):
         settings = context.scene.gp_ons_setting
         layout = self.layout
         # layout.use_property_split = True
+
+        ## PEEL TRANSFORM PANEL
         if ob.name.startswith('.peel_'):
             layout.label(text='- Peel object edit -')
             layout.label(text='Use transforms to place')
             layout.label(text='/!\ Use only object mode !')
-            layout.operator('gp.onion_back_to_object', text='Back to GP', icon='LOOP_BACK')
+
+            ## maybe can directly use native ops ? how to call with direct rot.EXEC_DEFAULT
+            # rot = layout.operator('transform.rotate')
+            # rot.orient_axis='Z'
+            # rot.orient_type='GLOBAL'
+            # rot.value=3.14159
+            
+            layout.operator('gp.onion_peel_flip', text='Flip X', icon='MOD_MIRROR')
+            layout.separator()
+            row=layout.row()
+            row.scale_y = 2.0
+            row.operator('gp.onion_back_to_object', text='Back To GP', icon='LOOP_BACK')
             return
 
         row = layout.row(align=False)
@@ -25,7 +38,8 @@ class GPOP_PT_onion_skinning_ui(bpy.types.Panel):
 
         icon = 'OUTLINER_OB_LIGHT' if settings.activated else 'LIGHT_DATA'
         state = 'Enabled' if settings.activated else 'Disabled'
-        row.prop(settings, 'activated', text=state, emboss=True, icon =icon)
+        row.prop(settings, 'activated', text=state, emboss=True, icon=icon)
+        row.prop(settings, 'world_space', text='World Space')
         row = layout.row(align=False)
         row.operator('gp.onion_peel_refresh', text='Refresh', icon='ONIONSKIN_ON') # FILE_REFRESH
         row.operator('gp.onion_peel_delete', text='Delete', icon='LOCKVIEW_OFF')
@@ -38,7 +52,7 @@ class GPOP_PT_onion_skinning_ui(bpy.types.Panel):
         row.prop(settings, 'after_num', text='')        
         
         col = layout.column()
-        ### ADDON PROPERTIE BASED PANEL
+        ### PROPERTIE BASED PANEL
         # for i in sorted([0] + [i*j for j in [1,-1] for i in range(1,num_to_display+1)]):
         for i in [-i for i in range(1, settings.before_num+1)][::-1] + [0] + [i for i in range(1, settings.after_num+1)]:
             if i == 0:
@@ -67,15 +81,15 @@ class GPOP_PT_onion_skinning_ui(bpy.types.Panel):
             # if not peel:
             #     continue # create a GP place holder ?
 
-            peel = context.scene.objects.get(f'.peel{ob.name} {i}')
+            peel = context.scene.objects.get(f'.peel_{ob.name} {i}')
             row = col.row(align=True)
             # row = col.split(align=True, factor=0.2)
             # CHECKBOX_DEHLT, CHECKBOX_HLT ? # show/hide with checkboxes (if more clear)
 
             # row.label(text=str(i), icon='DOT') # basic dot
             row.label(text=str(i))
-            if peel and hasattr(peel, 'is_transformed'):
-                row.operator('gp.reset_peel_transform', text='', icon='MESH_CIRCLE').peel_num = i # TRACKER, RADIOBUT_ON
+            if peel and peel.get('outapeg'):
+                row.operator('gp.reset_peel_transform', text='', icon='MESH_CIRCLE').peel_num = i # RADIOBUT_ON, TRANSFORM_ORIGINS, RADIOBUT_OFF, TRACKER
             else:
                 row.operator('gp.onion_peel_tranform', text='', icon='DOT').peel_num = i
             # row.separator()

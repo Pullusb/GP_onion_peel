@@ -2,7 +2,7 @@
 
 Blender grease pencil addon to add a custom onion skinning
 
-/!\ Alpha, work in progress
+/!\ Beta version
 
 **[Download latest](https://github.com/Pullusb/GP_onion_peel/archive/main.zip)**
 
@@ -22,22 +22,36 @@ Those objects are used as onion skinning and can be manipulated to check objects
 
 <!--
 ## TODO:
-
-- entering edit mode should hide collection (else all objects are visible at once)
-- place peels slightly behind from camera (and from viewport ?)
 - refresh choices:
     - Add choice to refresh all object or only current
     - Choose if other objects Onion are to be masked
-- Apply matrix from evaluated object keys
-- Custom placement peel feature (outapeg)
+
 
 Bonus:
 - Filter by key type (EZ... I think)
 - Create direct frame offset mode and show option in view
+- Tricky : maybe find a way to show object keys... create temporary keys using a specific key mode ?
 
 -->
 
 ## Changelog:
+
+0.4.0
+
+- feat: world mode support
+    - using frame set, can be long on big scene
+    - added option to use only local space
+
+- feat: avoid overlap
+    - Objects are placed superslighly behind main one according to active camera
+    - note: maybe add the same when in free_navigation viewport later.
+
+- feat: custom transform with differential position store on object prop
+    - select the peel in object mode directly to transform
+    - added a flip X button 
+
+- UI and bug-fixes
+
 
 0.3.3
 

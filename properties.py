@@ -9,7 +9,7 @@ class GPOP_PGT_frame_settings(bpy.types.PropertyGroup):
     opacity : IntProperty(default=100, min=1, max=100, subtype='PERCENTAGE', options={'HIDDEN'}, update=update_opacity)
     visibility : BoolProperty(default=True, options={'HIDDEN'}, update=update_opacity)
 
-    ## Tranforms need to be stored at object level since there can be multiple objects...
+    ## Tranforms need to be stored at object level since there are multiple objects...
     # matrix : FloatVectorProperty(subtype='MATRIX', size=16, options={'HIDDEN'}) # default=(0.0, 0.0, 0.0, 0.0), 
     # transformed : BoolProperty(default=False) #Tell if a transform (matrix) is applied to the peel.
     
@@ -19,7 +19,11 @@ class GPOP_PGT_frame_settings(bpy.types.PropertyGroup):
 
 class GPOP_PGT_settings(bpy.types.PropertyGroup):
 
-    activated : BoolProperty(name='Activate', default=False)
+    activated : BoolProperty(name='Activate', default=False,
+    description='Activate the onion skinning with auto-refresh on frame change')
+    
+    world_space : BoolProperty(name='World Space', default=True,
+    description='Consider the object animation to place onion peels in world space (Else local space)\nIf your GP object does not move, disable for better performance')
 
     offset_mode : EnumProperty(
         name="Mode", description="Ghost offset mode", default='KEYS', options={'HIDDEN'}, update=None, get=None, set=None,

@@ -56,14 +56,14 @@ class GPOP_OT_onion_skin_refresh(bpy.types.Operator):
         gpl = context.object.data.layers
         if self.full_refresh:
             # clear and recreate
-            onion.clear_peels()
+            onion.clear_peels() # full clear (delete all)
             if not [l for l in gpl if l.use_onion_skinning]: # Skip if no onion layers
                 self.report({'WARNING'}, 'All layers have onion skin toggled off')
                 return {'CANCELLED'}
-            onion.generate_onion_peels(self, context)
+            onion.update_onion(self, context)
         
         else:
-            onion.clean_peels()
+            onion.clean_peels() # clean (without deleting)
             if not [l for l in gpl if l.use_onion_skinning]: # Skip if no onion layers
                 self.report({'WARNING'}, 'All layers have onion skin toggled off')
                 return {'CANCELLED'}
@@ -74,7 +74,6 @@ class GPOP_OT_onion_skin_refresh(bpy.types.Operator):
 
 
         return {"FINISHED"}
-
 
 class GPOP_OT_onion_peel_pyramid_fade(bpy.types.Operator):
     bl_idname = "gp.onion_peel_pyramid_fade"
@@ -154,6 +153,7 @@ class GPOP_OT_onion_peel_tranform(bpy.types.Operator):
     peel_num : bpy.props.IntProperty()
 
     def execute(self, context):
+        # TODO maybe make a modal to avoid errors... (Bonus)
         if not self.peel_num:
             self.report({'ERROR'}, f'Peel number is not valid : {self.peel_num}')
             return {"CANCELLED"}
@@ -174,45 +174,33 @@ class GPOP_OT_onion_peel_tranform(bpy.types.Operator):
         context.view_layer.objects.active = peel
         peel.select_set(True)
 
-        peel['is_transformed'] = True
+        # launch directly a translate ?
+        bpy.ops.transform.translate('INVOKE_DEFAULT')
+        # force update, else color and placement are sometimes off...
+        # peel.location = peel.location
+
+        ## TODO >> having the selection outline is "relou" for simple strokes
 
         return {"FINISHED"}
 
-class GPOP_OT_onion_reset_peel_transform(bpy.types.Operator):
-    bl_idname = "gp.reset_peel_transform"
-    bl_label = "Reset Peel Transform"
-    bl_description = "Reset the transform of selected onion peel"
+class GPOP_OT_onion_peel_flip(bpy.types.Operator):
+    bl_idname = "gp.onion_peel_flip"
+    bl_label = "Peel Flip"
+    bl_description = "Flip the out of peg onion peel"
     bl_options = {"REGISTER", "INTERNAL"}
 
     @classmethod
     def poll(cls, context):
         return context.object and context.object.type == 'GPENCIL'
 
-    peel_num : bpy.props.IntProperty()
-
     def execute(self, context):
-        if not self.peel_num:
-            self.report({'ERROR'}, f'Peel number seems not valid : {self.peel_num}')
-            return {"CANCELLED"}
-
         ob = context.object
-        peel_name =  f'{onion.to_peel_name(ob.name)} {self.peel_num}'
-        
-        peel = context.scene.objects.get(peel_name)
-        if not peel:
-            self.report({'ERROR'}, f'Could not find this Onion peel!\nTry refreshing')
+        if not ob:
+            self.report({'ERROR'}, f'Could not find this Onion peel, it might no exists yet ! \nTry refreshing first.')
             return {"CANCELLED"}
-
-        # TODO RESET THE transform:
-        #   - by reading the frame in fixed time_offset
-        #   - evaluating the position from frame in source object (ob) fcurve
-        
-        ## local mode
-        peel.matrix_world = ob.matrix_world
-        del peel['is_transformed']
-        # peel['is_transformed'] = False # if native prop everywhere...
-
+        bpy.ops.transform.rotate(value=3.14159, orient_axis='Z', orient_type='GLOBAL')
         return {"FINISHED"}
+
 
 class GPOP_OT_onion_back_to_object(bpy.types.Operator):
     bl_idname = "gp.onion_back_to_object"
@@ -240,13 +228,81 @@ class GPOP_OT_onion_back_to_object(bpy.types.Operator):
         if not source_ob:
             self.report({'ERROR'}, f'Could not find object named "{source}"')
             return {"CANCELLED"}
+        
+        # if ob.get('outapeg'):
+            # create only if the prop exists ?
+            # -> avoid register case object is directly selected
+        
+        # save matrix to apply as out of peg
+        # ob['outapeg'] = ob.matrix_world[:]
+        
+        ## DIRECT MATRIX
+        # mat = ob.matrix_world # direct matrix
+        ## DIFF MATRIX so object really stay in place
+        mat = source_ob.matrix_world.inverted() @ ob.matrix_world
+        ob['outapeg'] = str(list(mat))
 
         ob.hide_select = True
+        source_ob.select_set(True)
         context.view_layer.objects.active = source_ob
         ob.select_set(False)
+        
+        ob.location = ob.location
         # restore mode
         if hasattr(context.view_layer, 'gp_last_mode'):
             bpy.ops.object.mode_set(mode=context.view_layer.gp_last_mode)
+        return {"FINISHED"}
+class GPOP_OT_onion_reset_peel_transform(bpy.types.Operator):
+    bl_idname = "gp.reset_peel_transform"
+    bl_label = "Reset Peel Transform"
+    bl_description = "Reset the transform of selected onion peel"
+    bl_options = {"REGISTER", "INTERNAL"}
+
+    @classmethod
+    def poll(cls, context):
+        return context.object and context.object.type == 'GPENCIL'
+
+    peel_num : bpy.props.IntProperty()
+
+    def execute(self, context):
+        if not self.peel_num:
+            self.report({'ERROR'}, f'Peel number seems not valid : {self.peel_num}')
+            return {"CANCELLED"}
+
+        ob = context.object
+        peel_name =  f'{onion.to_peel_name(ob.name)} {self.peel_num}'
+        
+        peel = context.scene.objects.get(peel_name)
+        if not peel:
+            self.report({'ERROR'}, f'Could not find this Onion peel!\nTry refreshing')
+            return {"CANCELLED"}
+
+
+        """ 
+        # RESET THE transform (not usable for now as it trigger frame set):
+        #   - by reading the frame in fixed time_offset
+        #   - evaluating the position from frame in source object (ob) fcurve
+
+        if not context.scene.gp_ons_setting.word_space:
+            peel.matrix_world = ob.matrix_world
+        
+        else:
+            # world mode
+            mat_offset = onion.get_depth_offset(context, ob)            
+            f = peel['frame']
+            current = context.scene.frame_current
+            print(f'restoring at matrix from frame {f}')
+            context.scene.frame_set(f) # triggering reevaluation through frame_set() !
+            peel.matrix_world = ob.matrix_world # matrix world AFTER frame change
+            if mat_offset:
+                peel.matrix_world.translation += mat_offset
+            context.scene.frame_set(current)
+        """
+
+        del peel['outapeg']
+        # since the propery is deleted the reevaluation will reset it
+        onion.update_onion(self, context)
+
         return {"FINISHED"}
 
 
@@ -259,6 +315,7 @@ GPOP_OT_onion_peel_pyramid_fade,
 GPOP_OT_onion_peel_tranform,
 GPOP_OT_onion_back_to_object,
 GPOP_OT_onion_reset_peel_transform,
+GPOP_OT_onion_peel_flip,
 )
 
 # TODO Add handler on frame post to refresh the timeline offset
