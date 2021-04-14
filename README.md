@@ -36,6 +36,10 @@ Bonus:
 
 ## Changelog:
 
+0.4.1
+
+- feat: added flix X/Y with native transform ops in peel transform mode 
+
 0.4.0
 
 - feat: world mode support

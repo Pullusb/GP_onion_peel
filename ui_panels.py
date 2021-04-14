@@ -15,17 +15,23 @@ class GPOP_PT_onion_skinning_ui(bpy.types.Panel):
 
         ## PEEL TRANSFORM PANEL
         if ob.name.startswith('.peel_'):
-            layout.label(text='- Peel object edit -')
-            layout.label(text='Use transforms to place')
-            layout.label(text='/!\ Use only object mode !')
+            layout.label(text='-- Peel object edit --')
+            layout.label(text='Use transforms to place onion peel')
+            layout.label(text='/!\ Use only object mode /!\ ')
 
-            ## maybe can directly use native ops ? how to call with direct rot.EXEC_DEFAULT
-            # rot = layout.operator('transform.rotate')
-            # rot.orient_axis='Z'
-            # rot.orient_type='GLOBAL'
-            # rot.value=3.14159
+            # Flip X/Y (global)
+            row=layout.row()
+            row.operator_context = 'EXEC_DEFAULT'
+            rot = row.operator('transform.rotate', text='Flip X', icon='MOD_MIRROR')
+            rot.orient_axis='Z'
+            rot.orient_type='GLOBAL'
+            rot.value=3.14159
             
-            layout.operator('gp.onion_peel_flip', text='Flip X', icon='MOD_MIRROR')
+            rot = row.operator('transform.rotate', text='Flip Z', icon='EMPTY_SINGLE_ARROW')
+            rot.orient_axis='X'
+            rot.orient_type='GLOBAL'
+            rot.value=3.14159
+            
             layout.separator()
             row=layout.row()
             row.scale_y = 2.0

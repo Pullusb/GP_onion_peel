@@ -183,25 +183,6 @@ class GPOP_OT_onion_peel_tranform(bpy.types.Operator):
 
         return {"FINISHED"}
 
-class GPOP_OT_onion_peel_flip(bpy.types.Operator):
-    bl_idname = "gp.onion_peel_flip"
-    bl_label = "Peel Flip"
-    bl_description = "Flip the out of peg onion peel"
-    bl_options = {"REGISTER", "INTERNAL"}
-
-    @classmethod
-    def poll(cls, context):
-        return context.object and context.object.type == 'GPENCIL'
-
-    def execute(self, context):
-        ob = context.object
-        if not ob:
-            self.report({'ERROR'}, f'Could not find this Onion peel, it might no exists yet ! \nTry refreshing first.')
-            return {"CANCELLED"}
-        bpy.ops.transform.rotate(value=3.14159, orient_axis='Z', orient_type='GLOBAL')
-        return {"FINISHED"}
-
-
 class GPOP_OT_onion_back_to_object(bpy.types.Operator):
     bl_idname = "gp.onion_back_to_object"
     bl_label = "Back to GP"
@@ -315,7 +296,6 @@ GPOP_OT_onion_peel_pyramid_fade,
 GPOP_OT_onion_peel_tranform,
 GPOP_OT_onion_back_to_object,
 GPOP_OT_onion_reset_peel_transform,
-GPOP_OT_onion_peel_flip,
 )
 
 # TODO Add handler on frame post to refresh the timeline offset
