@@ -22,19 +22,22 @@ Those objects are used as onion skinning and can be manipulated to check objects
 
 <!--
 ## TODO:
-- refresh choices:
-    - Add choice to refresh all object or only current
-    - Choose if other objects Onion are to be masked
-
+- refresh choices (now refresh only current):
+    - Add choice to refresh all
+- chose with key placement to use (closest to current frame ? active layer ? both ?)
 
 Bonus:
 - Filter by key type (EZ... I think)
-- Create direct frame offset mode and show option in view
-- Tricky : maybe find a way to show object keys... create temporary keys using a specific key mode ?
+- Direct frame offset mode (instead of key offset), might not be usefull at all...
 
 -->
 
 ## Changelog:
+
+0.4.5
+
+- Test change: Try a version using data-copy to allow permanent drawing of onion skin
+- code: cleanup
 
 0.4.4
 
