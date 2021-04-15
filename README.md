@@ -36,6 +36,14 @@ Bonus:
 
 ## Changelog:
 
+0.4.3
+
+- Fix: corrected the update methods
+    - check layer frames and store in a separate loop
+    - loop only once in onion peels
+
+- Fix: bad matrix offset
+
 0.4.2
 
 - fix: Hide other onion than active object

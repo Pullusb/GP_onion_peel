@@ -41,7 +41,7 @@ class GPOP_PGT_settings(bpy.types.PropertyGroup):
     before_color : FloatVectorProperty(  
         name="Before Color",
         subtype='COLOR',
-        default=(0.019, 0.15, 0.017),
+        default=(0.019, 0.15, 0.017), # (0.157, 0.496, 0.151)
         min=0.0, max=1.0,
         description="Color for previous onion peels",
         update=update_peel_color
@@ -50,7 +50,7 @@ class GPOP_PGT_settings(bpy.types.PropertyGroup):
     after_color : FloatVectorProperty(  
         name="After Color",
         subtype='COLOR',
-        default=(0.014, 0.01, 0.25),
+        default=(0.014, 0.01, 0.25), #  (0.579, 0.158, 0.604)
         min=0.0, max=1.0,
         description="Color for next onion peels",
         update=update_peel_color
