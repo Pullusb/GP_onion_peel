@@ -17,20 +17,12 @@ class GPOP_OT_onion_skin_delete(bpy.types.Operator):
 
     def execute(self, context):
         context.scene.gp_ons_setting.activated = False
+
         if self.on_all:
             onion.clear_peels(full_clear=True)
             return {"FINISHED"}
 
-        pool = [context.object.name]
-        for name in pool:
-            col = bpy.data.collections.get(onion.to_onion_name(name))
-            for o in col.all_objects:
-                bpy.data.objects.remove(o)
-            bpy.data.collections.remove(col)
-        
-        onioncol = bpy.data.collections.get('.onion_peels')
-        if not len(onioncol.children) and not len(onioncol.all_objects):
-            bpy.data.collections.remove(onioncol)
+        onion.clear_current_peel()
 
         return {"FINISHED"}
 
@@ -44,14 +36,19 @@ class GPOP_OT_onion_skin_refresh(bpy.types.Operator):
     def poll(cls, context):
         return context.object and context.object.type == 'GPENCIL'
     
+    # called : bpy.props.BoolProperty(default=False)
+
     def invoke(self, context, event):
         # self.on_all = event.shift
         self.full_refresh = event.shift
         return self.execute(context)
 
     def execute(self, context):
+        # if not self.called:
+            # do not touch activate if called by it. 
         if not context.scene.gp_ons_setting.activated:
             context.scene.gp_ons_setting.activated = True
+        # self.called = False
         
         gpl = context.object.data.layers
         if self.full_refresh:

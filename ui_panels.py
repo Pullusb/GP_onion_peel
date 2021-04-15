@@ -46,15 +46,18 @@ class GPOP_PT_onion_skinning_ui(bpy.types.Panel):
         state = 'Enabled' if settings.activated else 'Disabled'
         row.prop(settings, 'activated', text=state, emboss=True, icon=icon)
         row.prop(settings, 'world_space', text='World Space')
+        # row.prop(settings, 'only_active', text='Only Active')
         row = layout.row(align=False)
         row.operator('gp.onion_peel_refresh', text='Refresh', icon='ONIONSKIN_ON') # FILE_REFRESH
         row.operator('gp.onion_peel_delete', text='Delete', icon='LOCKVIEW_OFF')
         # layout.prop(settings, 'offset_mode') # WIP
         row = layout.row(align=True)
         row.prop(settings, 'before_num', text='')
-        row.prop(ob.data, 'before_color', text='')
+        row.prop(settings, 'before_color', text='')
+        # row.prop(ob.data, 'before_color', text='') # propertie if custom
         row.separator()
-        row.prop(ob.data, 'after_color', text='')
+        row.prop(settings, 'after_color', text='')
+        # row.prop(ob.data, 'after_color', text='') # propertie if custom
         row.prop(settings, 'after_num', text='')        
         
         col = layout.column()

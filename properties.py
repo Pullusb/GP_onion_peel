@@ -1,5 +1,5 @@
 import bpy
-from .onion import update_onion, update_opacity
+from .onion import update_onion, update_opacity, update_peel_color#, switch_onion
 
 from bpy.props import BoolProperty, EnumProperty, \
     IntProperty, FloatVectorProperty, CollectionProperty, \
@@ -20,9 +20,14 @@ class GPOP_PGT_frame_settings(bpy.types.PropertyGroup):
 class GPOP_PGT_settings(bpy.types.PropertyGroup):
 
     activated : BoolProperty(name='Activate', default=False,
-    description='Activate the onion skinning with auto-refresh on frame change')
+    description='Activate the onion skinning with auto-refresh on frame change',
+    # update=switch_onion
+    )
     
-    world_space : BoolProperty(name='World Space', default=True,
+    # only_active : BoolProperty(name='Only Active', default=True,
+    # description='Refresh only active object peels, and hide other, else refresh all (can slow down)')
+    
+    world_space : BoolProperty(name='World Space', default=False,
     description='Consider the object animation to place onion peels in world space (Else local space)\nIf your GP object does not move, disable for better performance')
 
     offset_mode : EnumProperty(
@@ -32,6 +37,24 @@ class GPOP_PGT_settings(bpy.types.PropertyGroup):
             ('FRAMES', 'Frames', 'Ghost number are frames', 0),
             ))
         # (key, label, descr, id[, icon])
+
+    before_color : FloatVectorProperty(  
+        name="Before Color",
+        subtype='COLOR',
+        default=(0.019, 0.15, 0.017),
+        min=0.0, max=1.0,
+        description="Color for previous onion peels",
+        update=update_peel_color
+        )
+
+    after_color : FloatVectorProperty(  
+        name="After Color",
+        subtype='COLOR',
+        default=(0.014, 0.01, 0.25),
+        min=0.0, max=1.0,
+        description="Color for next onion peels",
+        update=update_peel_color
+        )
 
     before_num : IntProperty(
         name="Before", description="Number of previous ghost displayed",

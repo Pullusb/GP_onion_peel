@@ -50,6 +50,17 @@ def clear_peels(full_clear=False):
     if op_col:
         bpy.data.collections.remove(op_col)
 
+def clear_current_peel():
+    name = context.object.name
+    col = bpy.data.collections.get(to_onion_name(name))
+    for o in col.all_objects:
+        bpy.data.objects.remove(o)
+    bpy.data.collections.remove(col)
+
+    onioncol = bpy.data.collections.get('.onion_peels')
+    if not len(onioncol.children) and not len(onioncol.all_objects):
+        bpy.data.collections.remove(onioncol)
+
 
 def clean_peels():
     op_col = bpy.data.collections.get('.onion_peels')
@@ -147,13 +158,15 @@ def get_depth_offset(context, ob):
 
 ### MAIN FUNCTION (called on each frame change or when onion rebuild is needed)
 
+
 @persistent
 def update_onion(self, context):
     # t0 = time()
-    scene = context.scene
     ob = bpy.context.object
     if not ob or ob.type != 'GPENCIL' or ob.name.startswith('.peel'):
         return
+    
+    scene = context.scene
 
     #/ Handle display
     op_col = bpy.data.collections.get('.onion_peels')
@@ -172,7 +185,7 @@ def update_onion(self, context):
     if not [l for l in gpl if l.use_onion_skinning]: # Skip if no onion layers
         return
 
-    scene.gp_ons_setting.activated = False #Mtx avoid infinie recursion
+    scene.gp_ons_setting.activated = False #Mtx avoid infinite recursion
     mat = ob.matrix_world
     mat_offset = get_depth_offset(context, ob)
     if mat_offset:
@@ -235,8 +248,7 @@ def update_onion(self, context):
                 # pop current frome from previous
                 previous.pop()
 
-        
-        ## all asked ~~limited by scanned number~~ I
+        ## all asked ~~limited by scanned number~~
         # for num in [-i for i in range(1,gprev+1)][len(previous)-1::-1] + [i for i in range(1,gnext+1)][:len(following)]:
         ## this loop always create all peels even when not needed
         for num in [-i for i in range(1,gprev+1)] + [i for i in range(1,gnext+1)]:
@@ -347,9 +359,20 @@ def update_onion(self, context):
     
         # maybe just disable opacity if stil in peeling range ?
     scene.gp_ons_setting.activated = True #Mtx avoid infinite recursion
-    op_col.hide_viewport = False
+    op_col.hide_viewport = peel_col.hide_viewport = False
+    
+    for c in op_col.children:
+        c.hide_viewport = c is not peel_col
+
     # print('>>>',time()-t0)
 
+
+# def update_onion(self, context):
+#     if context.scene.gp_ons_setting.only_active:
+#         update_ob_onion(context, context.object)
+#     else:
+#         for o in context.scene.objects:
+#             update_ob_onion(context, o)
 
 def update_opacity(self, context):
     settings = context.scene.gp_ons_setting
@@ -380,6 +403,30 @@ def update_opacity(self, context):
                 if m.factor == 0:
                     continue
                 m.factor = fsetting.opacity / 100 * opacity_factor
+
+
+def update_peel_color(self, context):
+    settings = context.scene.gp_ons_setting
+    op_col = bpy.data.collections.get('.onion_peels')
+    if not op_col:
+        return
+    peel_col = op_col.children.get(to_onion_name(context.object.name))
+    if not peel_col:
+        return
+    for o in peel_col.objects:
+        color = settings.before_color if o['index'] < 0 else settings.after_color
+
+        for m in o.grease_pencil_modifiers:
+            if m.type == 'GP_TINT':
+                m.color = color
+
+
+# def switch_onion(self, context):
+#     if context.scene.gp_ons_setting.activated:
+#         bpy.ops.gp.onion_peel_refresh(called=True)
+#     else:
+#         clear_current_peel()
+
 
 """ 
 def generate_onion_peels(context):

@@ -36,6 +36,12 @@ Bonus:
 
 ## Changelog:
 
+0.4.2
+
+- fix: Hide other onion than active object
+- feat: before/after color are now properties and refresh dynamically
+- pref: Worldspace off by defaut
+
 0.4.1
 
 - feat: added flix X/Y with native transform ops in peel transform mode 
