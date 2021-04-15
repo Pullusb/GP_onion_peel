@@ -147,14 +147,22 @@ def clean_mods(gpob):
         if m.layer not in layer_list:
             pgm.remove(m)
 
-
 def get_depth_offset(context, ob, offset=0.0001):
     """return offset to apply to ob"""
     # superslight offset from camera if any (maybe check viewport view if in viewport)
     # maybe add a modifier a to reduce stroke size very slightly (overkill...) # 0.0001
     if context.scene.camera:
         return (ob.matrix_world.translation - context.scene.camera.matrix_world.translation).normalized() * offset
-    
+
+def get_new_matrix_with_offset(context, ob, offset=0.0001):
+    """return a copy of the matrix with applied ofset"""
+    # superslight offset from camera if any (maybe check viewport view if in viewport)
+    # maybe add a modifier a to reduce stroke size very slightly (overkill...) # 0.0001
+    if not context.scene.camera:
+        return
+    mat = ob.matrix_world.copy()
+    mat.translation += (mat.translation - context.scene.camera.matrix_world.translation).normalized() * offset
+    return mat
 
 ### MAIN FUNCTION (called on each frame change or when onion rebuild is needed)
 
@@ -403,11 +411,10 @@ def update_onion(self, context):
         return
 
     scene.gp_ons_setting.activated = False #Mtx avoid infinite recursion
-    mat = ob.matrix_world.copy()
     
-    mat_offset = get_depth_offset(context, ob)
-    if mat_offset:
-        mat.translation += mat_offset
+    # orignal Matrix ?
+    # mat = ob.matrix_world.copy()
+    # mat_offset = get_new_matrix_with_offset(context, ob)
 
     ## TODO (optimise clean withing update)
     # clean_peels()
@@ -448,6 +455,7 @@ def update_onion(self, context):
             previous.pop()
         layers.append([info, previous, following])
 
+    count = 0
     for num in [-i for i in range(1,gprev+1)] + [i for i in range(1,gnext+1)]:
         absnum = abs(num)
 
@@ -491,30 +499,10 @@ def update_onion(self, context):
 
             # hide and skip non displayed onion layer of out for range ones
             if mark is None:
-                peel.matrix_world = mat
+                peel.matrix_world = ob.matrix_world
                 set_layer_opacity_by_mod(pgm, info, 0)
                 continue
             
-            peel['frame'] = mark
-
-            ## assigning world matrix:
-            if peel.get('outapeg'):
-                ## DIRECT MATRIX assignation
-                # peel.matrix_world = eval(f"Matrix({peel['outapeg']})")
-                ## DIFF MATRIX at time of modification
-                peel.matrix_world = ob.matrix_world @ eval(f"Matrix({peel['outapeg']})")
-            else:
-                if not settings.world_space:
-                    peel.matrix_world = mat
-                else:
-                # if settings.world_space:
-                    context.scene.frame_set(mark)
-                    peel.matrix_world = ob.matrix_world.copy()
-
-                    if mat_offset:
-                        peel.matrix_world.translation += mat_offset
-                        # print(num, peel.matrix_world.translation)
-                        # context.scene.cursor.location = peel.matrix_world.translation
 
             # TIME OFFSET
             mod_time = pgm.get(f'{info}_time')
@@ -533,6 +521,27 @@ def update_onion(self, context):
         for info in no_onion_lays:
             set_layer_opacity_by_mod(pgm, info, 0)
         
+        # set position in space
+        peel['frame'] = mark # can be None
+
+        ## assigning world matrix:
+        if peel.get('outapeg'):
+            ## DIRECT MATRIX assignation
+            # peel.matrix_world = eval(f"Matrix({peel['outapeg']})")
+            ## DIFF MATRIX at time of modification
+            peel.matrix_world = ob.matrix_world @ eval(f"Matrix({peel['outapeg']})")
+        
+        else:
+            count += 0.0001
+            if not settings.world_space or not mark:
+                # peel.matrix_world = mat
+                peel.matrix_world = get_new_matrix_with_offset(context, ob, offset=count)
+            else:
+                context.scene.frame_set(mark)
+                # peel.matrix_world = ob.matrix_world.copy()
+                peel.matrix_world = get_new_matrix_with_offset(context, ob, offset=count)
+                # context.scene.cursor.location = peel.matrix_world.translation
+
     if settings.world_space:
         context.scene.frame_set(cur_frame)
     

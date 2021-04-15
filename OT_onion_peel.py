@@ -267,7 +267,7 @@ class GPOP_OT_onion_reset_peel_transform(bpy.types.Operator):
         else:
             # world mode
             mat_offset = onion.get_depth_offset(context, ob)            
-            f = peel['frame']
+            f = peel['frame'] <-< can be not setted if no mark waas found in any layer.
             current = context.scene.frame_current
             print(f'restoring at matrix from frame {f}')
             context.scene.frame_set(f) # triggering reevaluation through frame_set() !

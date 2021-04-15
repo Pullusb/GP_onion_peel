@@ -36,13 +36,17 @@ Bonus:
 
 ## Changelog:
 
+0.4.4
+
+- fix: Problems with matrix position
+
 0.4.3
 
-- Fix: corrected the update methods
+- fix: corrected the update methods
     - check layer frames and store in a separate loop
     - loop only once in onion peels
 
-- Fix: bad matrix offset
+- fix: bad matrix offset
 
 0.4.2
 
