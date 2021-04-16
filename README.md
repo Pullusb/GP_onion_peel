@@ -34,6 +34,10 @@ Bonus:
 
 ## Changelog:
 
+0.4.6
+
+- add properties to adjust distance (fix opacity)
+
 0.4.5
 
 - Test change: Try a version using data-copy to allow permanent drawing of onion skin

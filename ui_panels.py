@@ -46,6 +46,7 @@ class GPOP_PT_onion_skinning_ui(bpy.types.Panel):
         state = 'Enabled' if settings.activated else 'Disabled'
         row.prop(settings, 'activated', text=state, emboss=True, icon=icon)
         row.prop(settings, 'world_space', text='World Space')
+        row.prop(settings, 'depth_offset', text='Depth')
         # row.prop(settings, 'only_active', text='Only Active')
         row = layout.row(align=False)
         row.operator('gp.onion_peel_refresh', text='Refresh', icon='ONIONSKIN_ON') # FILE_REFRESH

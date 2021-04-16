@@ -326,7 +326,7 @@ def update_onion(self, context):
             peel.matrix_world = ob.matrix_world @ eval(f"Matrix({peel['outapeg']})")
         
         else:
-            count += 0.0001
+            count += settings.depth_offset
             if not settings.world_space or not mark:
                 # peel.matrix_world = mat
                 peel.matrix_world = get_new_matrix_with_offset(context, ob, offset=count)

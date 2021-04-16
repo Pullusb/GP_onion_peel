@@ -3,7 +3,7 @@ from .onion import update_onion, update_opacity, update_peel_color#, switch_onio
 
 from bpy.props import BoolProperty, EnumProperty, \
     IntProperty, FloatVectorProperty, CollectionProperty, \
-    PointerProperty, StringProperty
+    PointerProperty, StringProperty, FloatProperty
 
 class GPOP_PGT_frame_settings(bpy.types.PropertyGroup):
     opacity : IntProperty(default=100, min=1, max=100, subtype='PERCENTAGE', options={'HIDDEN'}, update=update_opacity)
@@ -20,15 +20,19 @@ class GPOP_PGT_frame_settings(bpy.types.PropertyGroup):
 class GPOP_PGT_settings(bpy.types.PropertyGroup):
 
     activated : BoolProperty(name='Activate', default=False,
-    description='Activate the onion skinning with auto-refresh on frame change',
-    # update=switch_onion
-    )
+        description='Activate the onion skinning with auto-refresh on frame change',
+        # update=switch_onion
+        )
     
     # only_active : BoolProperty(name='Only Active', default=True,
     # description='Refresh only active object peels, and hide other, else refresh all (can slow down)')
     
     world_space : BoolProperty(name='World Space', default=False,
-    description='Consider the object animation to place onion peels in world space (Else local space)\nIf your GP object does not move, disable for better performance')
+        description='Consider the object animation to place onion peels in world space (Else local space)\nIf your GP object does not move, disable for better performance')
+
+    depth_offset : FloatProperty(name='Depth offset', default=0.025, 
+        description='offset the onion peel in the depth from camera (increment if peels are overlapping each other in)',
+        update=update_onion)
 
     offset_mode : EnumProperty(
         name="Mode", description="Ghost offset mode", default='KEYS', options={'HIDDEN'}, update=None, get=None, set=None,
