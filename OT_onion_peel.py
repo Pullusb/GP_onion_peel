@@ -4,7 +4,7 @@ from . import onion
 class GPOP_OT_onion_skin_delete(bpy.types.Operator):
     bl_idname = "gp.onion_peel_delete"
     bl_label = "Delete Onion_Skin"
-    bl_description = "Delete all custom Onion skins"
+    bl_description = "Delete Onion Peels\nShift + clic to delete all peels"
     bl_options = {"REGISTER", "UNDO"}
 
     @classmethod
@@ -17,12 +17,11 @@ class GPOP_OT_onion_skin_delete(bpy.types.Operator):
 
     def execute(self, context):
         context.scene.gp_ons_setting.activated = False
-
         if self.on_all:
             onion.clear_peels(full_clear=True)
             return {"FINISHED"}
 
-        onion.clear_current_peel()
+        onion.clear_current_peel(context.object)
 
         return {"FINISHED"}
 

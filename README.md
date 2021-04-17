@@ -34,13 +34,19 @@ Bonus:
 
 ## Changelog:
 
+0.4.7
+
+- fix: layer order dependent onion display in world space (now consider only closest frame)
+- fix: onion delete bug
+
 0.4.6
 
 - add properties to adjust distance (fix opacity)
 
 0.4.5
 
-- Test change: Try a version using data-copy to allow permanent drawing of onion skin
+- Big change: Try a version using data-copy to allow permanent drawing of onion skin
+    - Still very fast to compute, but this double the object size in blend ince datablock is duplicated
 - code: cleanup
 
 0.4.4

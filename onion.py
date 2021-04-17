@@ -50,8 +50,8 @@ def clear_peels(full_clear=False):
     if op_col:
         bpy.data.collections.remove(op_col)
 
-def clear_current_peel():
-    name = context.object.name
+def clear_current_peel(ob):
+    name = ob.name
     col = bpy.data.collections.get(to_onion_name(name))
     for o in col.all_objects:
         bpy.data.objects.remove(o)
@@ -277,6 +277,8 @@ def update_onion(self, context):
             else:
                 tint.color = settings.after_color # ob.data.after_color
 
+        mark_prev = []
+        mark_next = []
         for layer in layers:
             info, previous, following = layer[:]
             
@@ -285,11 +287,12 @@ def update_onion(self, context):
                 fsetting = settings.neg_frames[abs(num)]
                 if absnum < len(previous)+1:   
                     mark = previous[num]
+                    mark_prev.append(mark)
             else:
                 fsetting = settings.pos_frames[num]
                 if absnum < len(following)+1:
                     mark = following[num-1]
-
+                    mark_next.append(mark)
 
             # hide and skip non displayed onion layer of out for range ones
             if mark is None:
@@ -297,7 +300,6 @@ def update_onion(self, context):
                 set_layer_opacity_by_mod(pgm, info, 0)
                 continue
             
-
             # TIME OFFSET
             mod_time = pgm.get(f'{info}_time')
             if not mod_time:
@@ -315,7 +317,13 @@ def update_onion(self, context):
         for info in no_onion_lays:
             set_layer_opacity_by_mod(pgm, info, 0)
         
-        # set position in space
+        # set position in space (change mark to be the closet frame)
+        if mark:
+            if num < 0:
+                mark = sorted(mark_prev)[-1]
+            else:
+                mark = sorted(mark_next)[0]
+
         peel['frame'] = mark # can be None
 
         ## assigning world matrix:
@@ -338,7 +346,6 @@ def update_onion(self, context):
 
     if settings.world_space:
         context.scene.frame_set(cur_frame)
-    
     
     # Delete too much peels
     for o in peel_col.objects:
@@ -427,77 +434,3 @@ def update_peel_color(self, context):
 #     else:
 #         for o in context.scene.objects:
 #             update_ob_onion(context, o)
-
-""" 
-def generate_onion_peels(context):
-    t0 = time()
-    ob = context.object
-    mat = ob.matrix_world
-    mat_inv = ob.matrix_parent_inverse
-
-    gprev = context.scene.gp_ons_setting.before_num
-    gnext = context.scene.gp_ons_setting.after_num
-
-    # create collections
-    op_col, peel_col = create_peel_col(bpy.context)
-
-    #-# create all peels
-    # oblist = []
-    # [f'{ob.name} 0'] + # need current ??
-
-    ## equal peels from left to right
-    # peel_list = [f'.peel_{ob.name} {i*j}' for j in [1,-1] for i in range(1,gnext+1)]
-    # peel_list.sort()
-    ## dont create useless peels (no need to reverse sort [::-1])
-    peel_list = [f'.peel_{ob.name} {i}' for i in range(1,gprev+1)] + [f'.peel_{ob.name} {i}' for i in range(1,gnext+1)]
-    for peel_name in peel_list:
-        on_ob = op_col.all_objects.get(peel_name)
-        
-        if not on_ob:
-            on_ob = bpy.data.objects.new(peel_name, ob.data)
-            peel_col.objects.link(on_ob)
-        
-        # apply matrix of evaluated position in world space and maybe just parent in local.
-        # on_ob.matrix_world = mat # apply the matrix of the object ?
-
-        # oblist.append(on_ob)
-        # [l for l in ob.data.layer if l.use_onion_skinning:
-        # continuening]
-        ## Tint
-        tint = on_ob.grease_pencil_modifiers.new('peel_color','GP_TINT')
-        tint.factor = 1.0
-        if peel_name.split()[-1].startswith('-'):
-            tint.color = ob.data.before_color
-        else:
-            tint.color = ob.data.after_color
-        
-        # PER LAYERS mods
-        for l in ob.data.layers:
-            info = l.info
-            if not l.use_onion_skinning:
-                # hide with opacity modifier
-                mod_opa = on_ob.grease_pencil_modifiers.new(f'{info}_opacity','GP_OPACITY')
-                mod_opa.factor = 0
-                mod_opa.layer = info
-                continue
-
-            mod_time = on_ob.grease_pencil_modifiers.new(f'{info}_time','GP_TIME')
-            mod_time.use_keep_loop = False
-            mod_time.layer = info
-            mod_opa = on_ob.grease_pencil_modifiers.new(f'{info}_opacity','GP_OPACITY')
-            mod_opa.normalize_opacity = True # maybe not...
-            mod_opa.layer = info
-
-
-            ## here add differential transform to match evaluated position compared to main object
-            # transfo = on_ob.grease_pencil_modifiers.new(f'{info}_time','GP_TIME')
-
-
-    # print('oblist: ', oblist)
-    # oblist.sort(key=lambda x: x.name)
-    # print('oblist.sorted: ', oblist)
-
-    update_onion(context.scene)
-
-    print(f'time {time()-t0:.2f}s')
-    return op_col, peel_col """
