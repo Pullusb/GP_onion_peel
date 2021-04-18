@@ -62,11 +62,11 @@ class GPOP_PGT_settings(bpy.types.PropertyGroup):
 
     before_num : IntProperty(
         name="Before", description="Number of previous ghost displayed",
-        default=2, min=1, max=10, soft_min=1, soft_max=10, step=1, options={'HIDDEN'}, update=update_onion)
+        default=2, min=1, max=32, soft_min=1, soft_max=16, step=1, options={'HIDDEN'}, update=update_onion)
     
     after_num : IntProperty(
         name="After", description="Number of next ghost displayed",
-        default=2, min=1, max=10, soft_min=1, soft_max=10, step=1, options={'HIDDEN'}, update=update_onion)    
+        default=2, min=1, max=32, soft_min=1, soft_max=16, step=1, options={'HIDDEN'}, update=update_onion)    
 
     # frames : CollectionProperty(type=GPOP_PGT_frame_settings)
     pos_frames : CollectionProperty(type=GPOP_PGT_frame_settings)

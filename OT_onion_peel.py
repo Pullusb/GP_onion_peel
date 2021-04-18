@@ -171,7 +171,8 @@ class GPOP_OT_onion_peel_tranform(bpy.types.Operator):
         peel.select_set(True)
 
         # launch directly a translate ?
-        bpy.ops.transform.translate('INVOKE_DEFAULT')
+        # bpy.ops.transform.translate('INVOKE_DEFAULT')
+
         # force update, else color and placement are sometimes off...
         # peel.location = peel.location
 
@@ -229,6 +230,7 @@ class GPOP_OT_onion_back_to_object(bpy.types.Operator):
         if hasattr(context.view_layer, 'gp_last_mode'):
             bpy.ops.object.mode_set(mode=context.view_layer.gp_last_mode)
         return {"FINISHED"}
+
 class GPOP_OT_onion_reset_peel_transform(bpy.types.Operator):
     bl_idname = "gp.reset_peel_transform"
     bl_label = "Reset Peel Transform"
@@ -243,7 +245,7 @@ class GPOP_OT_onion_reset_peel_transform(bpy.types.Operator):
 
     def execute(self, context):
         if not self.peel_num:
-            self.report({'ERROR'}, f'Peel number seems not valid : {self.peel_num}')
+            self.report({'ERROR'}, f'Peel number seems not valid : {self.peel_num}\nTry refreshing')
             return {"CANCELLED"}
 
         ob = context.object

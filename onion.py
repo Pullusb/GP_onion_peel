@@ -147,22 +147,31 @@ def clean_mods(gpob):
         if m.layer not in layer_list:
             pgm.remove(m)
 
-def get_depth_offset(context, ob, offset=0.0001):
-    """return offset to apply to ob"""
-    # superslight offset from camera if any (maybe check viewport view if in viewport)
-    # maybe add a modifier a to reduce stroke size very slightly (overkill...) # 0.0001
-    if context.scene.camera:
-        return (ob.matrix_world.translation - context.scene.camera.matrix_world.translation).normalized() * offset
-
 def get_new_matrix_with_offset(context, ob, offset=0.0001):
-    """return a copy of the matrix with applied ofset"""
-    # superslight offset from camera if any (maybe check viewport view if in viewport)
+    """return a copy of the matrix with applied offset and"""
+    # offset from camera if any 
     # maybe add a modifier a to reduce stroke size very slightly (overkill...) # 0.0001
-    if not context.scene.camera:
+    cam = context.scene.camera
+    if not cam:
+        # TODO check viewport view if in viewport if no cam
         return
+    
+    cam_loc = cam.matrix_world.translation
     mat = ob.matrix_world.copy()
-    mat.translation += (mat.translation - context.scene.camera.matrix_world.translation).normalized() * offset
-    return mat
+    scale = mat.to_scale()
+
+    if cam.data.type == 'ORTHO':
+        # get the camera vector center vector
+        v = Vector((0,0,-1))
+        v.rotate(cam.matrix_world) # .to_quaternion()
+        mat.translation += v * offset
+    else:
+        v = mat.translation - cam_loc
+        mat.translation += v.normalized() * offset
+        # scale multiplied by lenth diff factor (recalculate length with new location)
+        scale = scale * ((mat.translation - cam_loc).length / v.length)
+
+    return mat, scale
 
 
 def set_layer_opacity_by_mod(mods, layer_name, value):
@@ -178,6 +187,251 @@ def set_layer_opacity_by_mod(mods, layer_name, value):
 ### MAIN FUNCTION (called on each frame change or when onion rebuild is needed)
 ###
 
+@persistent
+def update_onion(self, context):
+    # t0 = time()
+    ob = bpy.context.object
+    if not ob or ob.type != 'GPENCIL' or ob.name.startswith('.peel'):
+        return
+    
+    scene = context.scene
+
+    #/ Handle display
+    op_col = bpy.data.collections.get('.onion_peels')
+    if not scene.gp_ons_setting.activated:
+        if op_col:
+            op_col.hide_viewport = True
+        return
+
+    if bpy.context.screen.is_animation_playing:
+        if op_col:
+            op_col.hide_viewport = True
+        # dont do anything and leave
+        return
+
+    gpl = ob.data.layers
+    if not [l for l in gpl if l.use_onion_skinning and not l.hide]: # Skip if no onion layers
+        return
+
+    scene.gp_ons_setting.activated = False #Mtx avoid infinite recursion
+    
+    # orignal Matrix ?
+    # offseted_mat = get_new_matrix_with_offset(context, ob)
+
+    ## TODO (optimise clean withing update ?)
+    # clean_peels()
+
+    # generate_onion_peels(bpy.context)
+    op_col, peel_col = create_peel_col(bpy.context)
+
+    op_col.hide_viewport = False
+    # Handle display/
+
+    peelname = to_peel_name(ob.name)
+    
+    cur_frame = scene.frame_current
+    settings = scene.gp_ons_setting
+    opacity_factor = settings.o_general / 100
+    gprev = settings.before_num
+    gnext = settings.after_num
+
+    for _ in range(gprev - len(settings.neg_frames) + 1):
+        f = settings.neg_frames.add()
+    for _ in range(gnext - len(settings.pos_frames) + 1):
+        f = settings.pos_frames.add()
+
+    peel = None
+    used = []
+    layers = []
+    
+    ## calculate all frame index by layer Once
+    for l in gpl:
+        if not l.use_onion_skinning or l.hide:
+            continue
+        frames = [f for f in l.frames]
+        if not frames: # complete skip of empty layers
+            continue
+        info = l.info
+        previous = [f for f in frames if f.frame_number <= cur_frame]
+        following = [f for f in frames if f.frame_number > cur_frame]
+        if previous: # if there are previous, kill current off the list 
+            previous.pop()
+        layers.append([info, previous, following])
+
+    count = 0
+    for num in [-i for i in range(1,gprev+1)] + [i for i in range(1,gnext+1)]:
+        absnum = abs(num)
+
+        # get / create the peel object
+        peel_name = f'{peelname} {num}'
+        peel = op_col.all_objects.get(peel_name)
+        data = bpy.data.grease_pencils.new(peel_name)
+        if not peel:
+            peel = bpy.data.objects.new(peel_name, data)
+            peel.hide_select = True
+            peel.use_grease_pencil_lights = False
+            peel_col.objects.link(peel)
+        else:
+            peel.data = data
+
+        peel['index'] = num
+        used.append(peel)
+        
+        # pgm = peel.grease_pencil_modifiers
+
+        mark_prev = []
+        mark_next = []
+        for layer in layers:
+            info, previous, following = layer[:]
+            
+            mark = None
+            if num < 0:
+                fsetting = settings.neg_frames[abs(num)]
+                if absnum < len(previous)+1:   
+                    mark = previous[num]
+                    mark_prev.append(mark.frame_number)
+            else:
+                fsetting = settings.pos_frames[num]
+                if absnum < len(following)+1:
+                    mark = following[num-1]
+                    mark_next.append(mark.frame_number)
+
+            # skip non displayed onion layer of out for range ones
+            if mark is None:
+                continue
+
+            nl = data.layers.new(info)
+            f = nl.frames.copy(mark)
+            f.frame_number = cur_frame
+            nl.use_lights = False
+            nl.opacity = fsetting.opacity / 100 * opacity_factor
+            # COLOR
+            if peel['index'] < 0:
+                nl.tint_color = settings.before_color # ob.data.before_color
+            else:
+                nl.tint_color = settings.after_color # ob.data.after_color
+            nl.tint_factor = 1
+
+        # set position in space (change mark to be the closet frame)
+        if mark:
+            if num < 0:
+                mark = sorted(mark_prev)[-1]
+            else:
+                mark = sorted(mark_next)[0]
+
+        peel['frame'] = mark # can be None
+
+        ## assigning world matrix:
+        if peel.get('outapeg'):
+            ## DIRECT MATRIX assignation
+            # peel.matrix_world = eval(f"Matrix({peel['outapeg']})")
+            ## DIFF MATRIX at time of modification
+            peel.matrix_world = ob.matrix_world @ eval(f"Matrix({peel['outapeg']})")
+        
+        else:
+            count += settings.depth_offset
+            # if not settings.world_space or not mark: (apply without settting frame current)
+            if settings.world_space: 
+                context.scene.frame_set(mark)
+            mat, scale = get_new_matrix_with_offset(context, ob, offset=count)
+            peel.matrix_world = mat
+            peel.scale = scale
+            # context.scene.cursor.location = peel.matrix_world.translation # debug
+
+    # get back to original current frame
+    if settings.world_space:
+        context.scene.frame_set(cur_frame)
+    
+    # Delete too much peels
+    for o in peel_col.objects:
+        if o not in used:
+            bpy.data.objects.remove(o)
+            continue
+
+    # Clear unused old peel data
+    for gp in bpy.data.grease_pencils[:]:
+        if not gp.users and gp.name.startswith('.peel'):
+            bpy.data.grease_pencils.remove(gp)
+
+    scene.gp_ons_setting.activated = True #Mtx avoid infinite recursion
+    op_col.hide_viewport = peel_col.hide_viewport = False
+    
+    # Hide other objects onions (show only active object onion)
+    for c in op_col.children:
+        c.hide_viewport = c is not peel_col
+    # print(time() - t0)
+
+
+def update_opacity(self, context):
+    settings = context.scene.gp_ons_setting
+    op_col = bpy.data.collections.get('.onion_peels')
+    if not op_col:
+        return
+
+    peel_col = op_col.children.get(to_onion_name(context.object.name))
+    if not peel_col:
+        return
+
+    opacity_factor = settings.o_general / 100
+
+    for o in peel_col.objects:
+        num = o['index']
+        if num < 0:
+            fsetting = settings.neg_frames[abs(num)]
+        else:
+            fsetting = settings.pos_frames[num]
+        
+        o.hide_viewport = not fsetting.visibility
+
+        if not fsetting.opacity:
+            continue
+        
+        # Layer settings
+        for l in o.data.layers:
+            l.opacity = fsetting.opacity / 100 * opacity_factor
+
+        # Modifier settings
+        # for m in o.grease_pencil_modifiers:
+        #     if m.type == 'GP_OPACITY':
+        #         if m.factor == 0:
+        #             continue
+        #         m.factor = fsetting.opacity / 100 * opacity_factor
+
+
+def update_peel_color(self, context):
+    settings = context.scene.gp_ons_setting
+    op_col = bpy.data.collections.get('.onion_peels')
+    if not op_col:
+        return
+    peel_col = op_col.children.get(to_onion_name(context.object.name))
+    if not peel_col:
+        return
+    for o in peel_col.objects:
+        color = settings.before_color if o['index'] < 0 else settings.after_color
+
+        for l in o.data.layers:
+            l.tint_color = color
+
+        # modifier settings
+        # for m in o.grease_pencil_modifiers:
+        #     if m.type == 'GP_TINT':
+        #         m.color = color
+
+
+# def switch_onion(self, context):
+#     if context.scene.gp_ons_setting.activated:
+#         bpy.ops.gp.onion_peel_refresh(called=True)
+#     else:
+#         clear_current_peel()
+
+# def update_onion(self, context):
+#     if context.scene.gp_ons_setting.only_active:
+#         update_ob_onion(context, context.object)
+#     else:
+#         for o in context.scene.objects:
+#             update_ob_onion(context, o)
+
+""" 
 @persistent
 def update_onion(self, context):
     # t0 = time()
@@ -243,10 +497,8 @@ def update_onion(self, context):
         frames = [f.frame_number for f in l.frames]
         if not frames: # complete skip of empty layers
             continue
-        previous = [f for f in frames if f <= cur_frame]
+        previous = [f for f in frames if f < cur_frame]
         following = [f for f in frames if f > cur_frame]
-        if previous and len(previous) > 1:# pop current frome from previous
-            previous.pop()
         layers.append([info, previous, following])
 
     count = 0
@@ -372,65 +624,4 @@ def update_onion(self, context):
     
     for c in op_col.children:
         c.hide_viewport = c is not peel_col
-    
-
-
-def update_opacity(self, context):
-    settings = context.scene.gp_ons_setting
-    op_col = bpy.data.collections.get('.onion_peels')
-    if not op_col:
-        return
-
-    peel_col = op_col.children.get(to_onion_name(context.object.name))
-    if not peel_col:
-        return
-
-    opacity_factor = settings.o_general / 100
-
-    for o in peel_col.objects:
-        num = o['index']
-        if num < 0:
-            fsetting = settings.neg_frames[abs(num)]
-        else:
-            fsetting = settings.pos_frames[num]
-        
-        o.hide_viewport = not fsetting.visibility
-
-        if not fsetting.opacity:
-            continue
-       
-        for m in o.grease_pencil_modifiers:
-            if m.type == 'GP_OPACITY':
-                if m.factor == 0:
-                    continue
-                m.factor = fsetting.opacity / 100 * opacity_factor
-
-
-def update_peel_color(self, context):
-    settings = context.scene.gp_ons_setting
-    op_col = bpy.data.collections.get('.onion_peels')
-    if not op_col:
-        return
-    peel_col = op_col.children.get(to_onion_name(context.object.name))
-    if not peel_col:
-        return
-    for o in peel_col.objects:
-        color = settings.before_color if o['index'] < 0 else settings.after_color
-
-        for m in o.grease_pencil_modifiers:
-            if m.type == 'GP_TINT':
-                m.color = color
-
-
-# def switch_onion(self, context):
-#     if context.scene.gp_ons_setting.activated:
-#         bpy.ops.gp.onion_peel_refresh(called=True)
-#     else:
-#         clear_current_peel()
-
-# def update_onion(self, context):
-#     if context.scene.gp_ons_setting.only_active:
-#         update_ob_onion(context, context.object)
-#     else:
-#         for o in context.scene.objects:
-#             update_ob_onion(context, o)
+"""
