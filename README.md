@@ -2,7 +2,7 @@
 
 Blender grease pencil addon to add a custom onion skinning
 
-/!\ Beta version
+/!\ Beta 2
 
 **[Download latest](https://github.com/Pullusb/GP_onion_peel/archive/main.zip)**
 
@@ -33,6 +33,16 @@ Bonus:
 -->
 
 ## Changelog:
+
+0.5.0
+
+- method change:
+    - instead of copying the data (linked or not) create new data per peel and copy over only needed frame (lighter and more reliable)
+    - use plain object and tweak layer settings directely instead of the time/tint/opacity modifiers
+    - works in edit mode refresh (was problematic with previous version)
+    - first completely usable version in any mode (edit and sculpt) 
+- fix: now scale according to offset when peel going further away from camera
+- fix: consider othor mode
 
 0.4.7
 
