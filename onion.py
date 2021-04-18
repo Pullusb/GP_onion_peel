@@ -331,11 +331,17 @@ def update_onion(self, context):
         else:
             count += settings.depth_offset
             # if not settings.world_space or not mark: (apply without settting frame current)
-            if settings.world_space: 
+            if settings.world_space and mark: 
                 context.scene.frame_set(mark)
             mat, scale = get_new_matrix_with_offset(context, ob, offset=count)
             peel.matrix_world = mat
             peel.scale = scale
+
+            # ops here is a superbad idea (just comment to get the idea of whatta-do)
+            # bpy.ops.object.origin_set({"selected_editable_objects": peel}, type='ORIGIN_GEOMETRY', center='MEDIAN')
+            # calculate ORIGIN_GEOMETRY position, set the origin there and apply the inverse to drawing...
+            # maybe just need a good modal...
+
             # context.scene.cursor.location = peel.matrix_world.translation # debug
 
     # get back to original current frame

@@ -34,6 +34,11 @@ Bonus:
 
 ## Changelog:
 
+0.5.1
+
+- fix: a little bug in the matrix
+- tried to add a custom "Origin to Geometry" offset on custom tranform but rotation breaks
+
 0.5.0
 
 - method change:
