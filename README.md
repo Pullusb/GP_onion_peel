@@ -2,7 +2,7 @@
 
 Blender grease pencil addon to add a custom onion skinning
 
-/!\ Beta 2
+/!\ Beta 3
 
 **[Download latest](https://github.com/Pullusb/GP_onion_peel/archive/main.zip)**
 
@@ -33,6 +33,17 @@ Bonus:
 -->
 
 ## Changelog:
+
+0.5.2
+
+- feat: add keytype filtering
+- feat: onion is deleted on save
+    - current limitation: for now this cancel custom peel transformations of all objects
+
+- change : All peel go in from by default to be always visible (still, not synced with main object)
+- fix: add undo steps when going back from/reseting custom transform
+- fix: GP sometimes not showing up
+
 
 0.5.1
 

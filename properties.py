@@ -37,10 +37,27 @@ class GPOP_PGT_settings(bpy.types.PropertyGroup):
     offset_mode : EnumProperty(
         name="Mode", description="Ghost offset mode", default='KEYS', options={'HIDDEN'}, update=None, get=None, set=None,
         items=(
-            ('KEYS', 'Keys', 'Ghost number are keys', 1),   
-            ('FRAMES', 'Frames', 'Ghost number are frames', 0),
+            ('KEYS', 'Keys', 'Ghost number are keys', 0),   
+            ('FRAMES', 'Frames', 'Ghost number are frames', 1),
             ))
         # (key, label, descr, id[, icon])
+
+    xray : BoolProperty(name='X-ray', default=True,
+        description='Show both object and ')
+
+
+    keyframe_type : EnumProperty(
+        name="Keyframe Filter", description="Only peel the onion for keyframe of chosen type", 
+        default='ALL', options={'HIDDEN'}, update=update_onion,
+        items=(
+            ('ALL', 'All', '', 0), # 'KEYFRAME'
+            ('KEYFRAME', 'Keyframe', '', 'KEYTYPE_KEYFRAME_VEC', 1),
+            ('BREAKDOWN', 'Breakdown', '', 'KEYTYPE_BREAKDOWN_VEC', 2),
+            ('MOVING_HOLD', 'Moving Hold', '', 'KEYTYPE_MOVING_HOLD_VEC', 3),
+            ('EXTREME', 'Extreme', '', 'KEYTYPE_EXTREME_VEC', 4),
+            ('JITTER', 'Jitter', '', 'KEYTYPE_JITTER_VEC', 5),
+            ))
+
 
     before_color : FloatVectorProperty(  
         name="Before Color",

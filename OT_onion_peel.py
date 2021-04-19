@@ -179,9 +179,8 @@ class GPOP_OT_onion_peel_tranform(bpy.types.Operator):
         # bpy.ops.object.origin_set(type='ORIGIN_GEOMETRY', center='MEDIAN')
         # bpy.types.ViewLayer.origin_offset_mat = old.inverted() @ peel.matrix_world.copy()
         
-
         # launch directly a translate ?
-        # bpy.ops.transform.translate('INVOKE_DEFAULT')
+        bpy.ops.transform.translate('INVOKE_DEFAULT')
         # force update, else color and placement are sometimes off...
         # peel.location = peel.location
 
@@ -228,7 +227,7 @@ class GPOP_OT_onion_back_to_object(bpy.types.Operator):
         
         ## DIFF MATRIX so object really stay in place
 
-        # mat = source_ob.matrix_world.inverted() @ ob.matrix_world
+        mat = source_ob.matrix_world.inverted() @ ob.matrix_world
 
         ## try using a counter matrix when set origin is used.... rotation break...
         # origin_offset_mat = getattr(context.view_layer, 'origin_offset_mat')
@@ -251,6 +250,7 @@ class GPOP_OT_onion_back_to_object(bpy.types.Operator):
         # restore mode
         if hasattr(context.view_layer, 'gp_last_mode'):
             bpy.ops.object.mode_set(mode=context.view_layer.gp_last_mode)
+        bpy.ops.ed.undo_push(message='Back To Grease Pencil')
         return {"FINISHED"}
 
 class GPOP_OT_onion_reset_peel_transform(bpy.types.Operator):
@@ -303,9 +303,8 @@ class GPOP_OT_onion_reset_peel_transform(bpy.types.Operator):
         del peel['outapeg']
         # since the propery is deleted the reevaluation will reset it
         onion.update_onion(self, context)
-
+        bpy.ops.ed.undo_push(message='Reset Peel transform')
         return {"FINISHED"}
-
 
 ### --- REGISTER ---
 

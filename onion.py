@@ -248,16 +248,27 @@ def update_onion(self, context):
     for l in gpl:
         if not l.use_onion_skinning or l.hide:
             continue
-        frames = [f for f in l.frames]
+        if settings.keyframe_type == 'ALL':
+            frames = [f for f in l.frames]
+        else: # filtered
+            frames = [f for f in l.frames if f.keyframe_type == settings.keyframe_type]
+
         if not frames: # complete skip of empty layers
             continue
+
         info = l.info
         previous = [f for f in frames if f.frame_number <= cur_frame]
         following = [f for f in frames if f.frame_number > cur_frame]
+
         if previous: # if there are previous, kill current off the list 
             previous.pop()
         layers.append([info, previous, following])
 
+    if not layers:
+        peel_col.hide_viewport = True
+        settings.activated = True
+        return
+        
     count = 0
     for num in [-i for i in range(1,gprev+1)] + [i for i in range(1,gnext+1)]:
         absnum = abs(num)
@@ -266,6 +277,10 @@ def update_onion(self, context):
         peel_name = f'{peelname} {num}'
         peel = op_col.all_objects.get(peel_name)
         data = bpy.data.grease_pencils.new(peel_name)
+
+        for m in ob.data.materials: # get same material stack
+            data.materials.append(m)
+
         if not peel:
             peel = bpy.data.objects.new(peel_name, data)
             peel.hide_select = True
@@ -274,6 +289,7 @@ def update_onion(self, context):
         else:
             peel.data = data
 
+        peel.show_in_front = True
         peel['index'] = num
         used.append(peel)
         

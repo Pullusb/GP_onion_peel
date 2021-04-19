@@ -13,7 +13,7 @@ class GPOP_PT_onion_skinning_ui(bpy.types.Panel):
         layout = self.layout
         # layout.use_property_split = True
 
-        ## PEEL TRANSFORM PANEL
+        #-## PEEL TRANSFORM PANEL
         if ob.name.startswith('.peel_'):
             layout.label(text='-- Peel object edit --')
             layout.label(text='Use transforms to place onion peel')
@@ -51,7 +51,9 @@ class GPOP_PT_onion_skinning_ui(bpy.types.Panel):
         row = layout.row(align=False)
         row.operator('gp.onion_peel_refresh', text='Refresh', icon='ONIONSKIN_ON') # FILE_REFRESH
         row.operator('gp.onion_peel_delete', text='Delete', icon='LOCKVIEW_OFF')
+        row = layout.row(align=False)
         # layout.prop(settings, 'offset_mode') # WIP
+        row.prop(settings, 'keyframe_type', text='Filter')
         row = layout.row(align=True)
         row.prop(settings, 'before_num', text='')
         row.prop(settings, 'before_color', text='')
@@ -66,6 +68,7 @@ class GPOP_PT_onion_skinning_ui(bpy.types.Panel):
         # for i in sorted([0] + [i*j for j in [1,-1] for i in range(1,num_to_display+1)]):
         for i in [-i for i in range(1, settings.before_num+1)][::-1] + [0] + [i for i in range(1, settings.after_num+1)]:
             if i == 0:
+                ###  MIDDLE LINE
                 # col.separator()
                 row = col.row(align=True)
                 row.label(text='0')
@@ -79,6 +82,7 @@ class GPOP_PT_onion_skinning_ui(bpy.types.Panel):
                 # col.separator()
                 continue
             
+            ### PEEL LINE
             if i < 0:
                 if abs(i) > len(settings.neg_frames) - 1:
                     continue
@@ -101,7 +105,11 @@ class GPOP_PT_onion_skinning_ui(bpy.types.Panel):
             if peel and peel.get('outapeg'):
                 row.operator('gp.reset_peel_transform', text='', icon='MESH_CIRCLE').peel_num = i # RADIOBUT_ON, TRANSFORM_ORIGINS, RADIOBUT_OFF, TRACKER
             else:
+                #> Go to object mode
                 row.operator('gp.onion_peel_tranform', text='', icon='DOT').peel_num = i
+                #> MODAL
+                # row.operator('gp.peel_custom_transform', text='', icon='DOT').peel_num = i
+
             # row.separator()
             # pid = f'p{abs(i)}' if i < 0 else f'n{i}'
             row.prop(fsetting, 'opacity', text='', slider=True)
