@@ -34,6 +34,12 @@ Bonus:
 
 ## Changelog:
 
+0.5.3
+
+- feat: added option to re-edit the custom transformation
+- fix: don't erase peel tranform on save (super quick value store/restore)
+
+
 0.5.2
 
 - feat: add keytype filtering

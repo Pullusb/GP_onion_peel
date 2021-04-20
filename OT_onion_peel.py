@@ -292,6 +292,93 @@ class GPOP_OT_onion_back_to_object(bpy.types.Operator):
         return {"FINISHED"}
 """
 
+### modal lock attempt
+'''
+class GPOP_OT_onion_peel_tranform(bpy.types.Operator):
+    bl_idname = "gp.onion_peel_tranform"
+    bl_label = "Peel Custom Transform"
+    bl_description = "Place or replace the onion peel"
+    bl_options = {"REGISTER", "INTERNAL"}
+
+    @classmethod
+    def poll(cls, context):
+        return context.object and context.object.type == 'GPENCIL'
+    
+    peel_num : bpy.props.IntProperty()
+
+    def invoke(self, context, event):
+        if not self.peel_num:
+            self.report({'ERROR'}, f'Peel number seems not valid : {self.peel_num}\nTry refreshing')
+            return {"CANCELLED"}
+        
+        ob = context.object
+        peel_name =  f'{onion.to_peel_name(ob.name)} {self.peel_num}'
+        peel = context.scene.objects.get(peel_name)
+        if not peel:
+            self.report({'ERROR'}, f'Could not find this Onion peel, it might no exists yet ! \nTry refreshing first.')
+            return {"CANCELLED"}
+
+        self.gp_last_mode = context.mode
+        self.org_matrix = peel.matrix_world.copy()
+        self.init_frame = context.scene.frame_current
+        bpy.ops.object.mode_set(mode='OBJECT')
+        # make it selectable and set as active
+        peel.hide_select = False
+        ob.select_set(False)
+        context.view_layer.objects.active = peel
+        peel.select_set(True)
+
+        self.peel = peel
+
+        self.source = ob
+        context.window_manager.modal_handler_add(self)
+        return {'RUNNING_MODAL'}
+    
+    def exit(self, context):
+        self.peel.hide_select = True
+        self.source.select_set(True)
+        context.view_layer.objects.active = self.source
+        self.peel.select_set(False)
+        self.peel.location = self.peel.location
+        # restore mode
+        context.area.header_text_set(None)
+        bpy.ops.object.mode_set(mode=self.gp_last_mode)
+        bpy.ops.ed.undo_push(message='Back To Grease Pencil')
+
+    def back_to_object(self, context):
+        mat = self.source.matrix_world.inverted() @ self.peel.matrix_world
+        self.peel['outapeg'] = str(list(mat))
+        self.exit(context)
+
+    def modal(self, context, event):
+        context.area.header_text_set(f'Move onion peel: use G:move / R:rotate / S:scale / M:mirror')
+        # lock everything except G R S clic
+        if event.type in {'G', 'R', 'S', 'LEFTMOUSE', 'RIGHTMOUSE'}:
+            print('Transform')
+            return {'PASS_THROUGH'}
+        
+        if event.type in {'G', 'R', 'S', 'LEFTMOUSE', 'RIGHTMOUSE'}:
+            print('Transform')
+            return {'PASS_THROUGH'}
+
+        if event.type in {'ESC'}:
+            print('Escape!')
+            self.peel.matrix_world = self.org_matrix
+            self.exit(context)
+            return {"CANCELLED"}
+
+        if event.type in {'RET'} and event.value == 'PRESS':
+            print('Enter !')
+            # beck to the right frame
+            context.scene.frame_current = self.init_frame
+            self.back_to_object(context)
+            return {"FINISHED"}
+
+        return {'RUNNING_MODAL'}
+'''
+
+
+
 class GPOP_OT_onion_peel_tranform(bpy.types.Operator):
     bl_idname = "gp.onion_peel_tranform"
     bl_label = "Peel Transform"

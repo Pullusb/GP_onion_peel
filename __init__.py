@@ -2,7 +2,7 @@ bl_info = {
     "name": "GP Onion Peel",
     "description": "Custom Onion skinning using refreshed linked GP duplications",
     "author": "Samuel Bernou",
-    "version": (0, 5, 2),
+    "version": (0, 5, 3),
     "blender": (2, 92, 0),
     "location": "View3D",
     "warning": "Beta",
@@ -35,12 +35,17 @@ from bpy.app.handlers import persistent
 
 @persistent
 def delete_onion(dummy):
-    # for o in bpy.context.scene.objects:
-    #     if o.type != 'GPENCIL':
-    #         continue
-    
-    #-#  for now just clear everything.
-    # TODO -> need to backup the out of peg values at least for current object..
+    op_col = bpy.data.collections.get('.onion_peels')
+    if not op_col:
+        return
+    transfo_list = []
+    for o in op_col.all_objects:
+        outapeg = o.get('outapeg')
+        if not outapeg:
+            continue
+        transfo_list.append([o.name, outapeg])
+    if transfo_list:
+        bpy.types.ViewLayer.onion_custom_transform = transfo_list
     bpy.types.ViewLayer.onion_was_active = bpy.context.scene.gp_ons_setting.activated
     onion.clear_peels(full_clear=False)
 
@@ -52,6 +57,18 @@ def restore_onion(dummy):
     else:
         # launch a refresh
         onion.update_onion(dummy, bpy.context)
+    
+    transfo_list = getattr(bpy.context.view_layer, 'onion_custom_transform')
+    if not transfo_list:
+        return
+    for name, outapeg in transfo_list:
+        ob = bpy.data.objects.get(name)
+        if not ob:
+            continue
+        ob['outapeg'] = outapeg
+    # re-refresh to set the offset
+    onion.update_onion(dummy, bpy.context)
+
 
 def register():
     properties.register()

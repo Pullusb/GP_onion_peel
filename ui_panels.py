@@ -11,7 +11,7 @@ class GPOP_PT_onion_skinning_ui(bpy.types.Panel):
             return
         settings = context.scene.gp_ons_setting
         layout = self.layout
-        # layout.use_property_split = True
+        # layout = layout.column_flow(columns=0, align=True)
 
         #-## PEEL TRANSFORM PANEL
         if ob.name.startswith('.peel_'):
@@ -72,6 +72,7 @@ class GPOP_PT_onion_skinning_ui(bpy.types.Panel):
                 # col.separator()
                 row = col.row(align=True)
                 row.label(text='0')
+                row.label(text='', icon='BLANK1')
                 # row.label(text='0', icon='REMOVE') # without transforms
                 # row.label(text='', icon='REMOVE')
                 # row.label(text='', icon='COLLAPSEMENU')
@@ -103,9 +104,13 @@ class GPOP_PT_onion_skinning_ui(bpy.types.Panel):
             # row.label(text=str(i), icon='DOT') # basic dot
             row.label(text=str(i))
             if peel and peel.get('outapeg'):
-                row.operator('gp.reset_peel_transform', text='', icon='MESH_CIRCLE').peel_num = i # RADIOBUT_ON, TRANSFORM_ORIGINS, RADIOBUT_OFF, TRACKER
+                row.operator('gp.reset_peel_transform', text='', icon='X').peel_num = i # RADIOBUT_ON, TRANSFORM_ORIGINS, RADIOBUT_OFF, TRACKER
+                # row.operator('gp.reset_peel_transform', text=str(i)).peel_num = i # RADIOBUT_ON, TRANSFORM_ORIGINS, RADIOBUT_OFF, TRACKER
+                # row.separator()
+                row.operator('gp.onion_peel_tranform', text='', icon='MESH_CIRCLE').peel_num = i
             else:
                 #> Go to object mode
+                row.label(text='', icon='BLANK1')
                 row.operator('gp.onion_peel_tranform', text='', icon='DOT').peel_num = i
                 #> MODAL
                 # row.operator('gp.peel_custom_transform', text='', icon='DOT').peel_num = i
