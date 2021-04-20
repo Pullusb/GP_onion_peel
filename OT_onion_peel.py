@@ -1,6 +1,7 @@
 import bpy
 from . import onion
-
+from math import pi
+from mathutils import Matrix, Vector
 class GPOP_OT_onion_skin_delete(bpy.types.Operator):
     bl_idname = "gp.onion_peel_delete"
     bl_label = "Delete Onion_Skin"
@@ -293,7 +294,6 @@ class GPOP_OT_onion_back_to_object(bpy.types.Operator):
 """
 
 ### modal lock attempt
-'''
 class GPOP_OT_onion_peel_tranform(bpy.types.Operator):
     bl_idname = "gp.onion_peel_tranform"
     bl_label = "Peel Custom Transform"
@@ -304,6 +304,7 @@ class GPOP_OT_onion_peel_tranform(bpy.types.Operator):
     def poll(cls, context):
         return context.object and context.object.type == 'GPENCIL'
     
+    tab_press_ct = 0
     peel_num : bpy.props.IntProperty()
 
     def invoke(self, context, event):
@@ -331,6 +332,9 @@ class GPOP_OT_onion_peel_tranform(bpy.types.Operator):
         self.peel = peel
 
         self.source = ob
+        
+        # launching ops dont work
+        # bpy.ops.transform.translate() 
         context.window_manager.modal_handler_add(self)
         return {'RUNNING_MODAL'}
     
@@ -344,6 +348,10 @@ class GPOP_OT_onion_peel_tranform(bpy.types.Operator):
         context.area.header_text_set(None)
         bpy.ops.object.mode_set(mode=self.gp_last_mode)
         bpy.ops.ed.undo_push(message='Back To Grease Pencil')
+    
+    def cancel(self, context):
+        self.peel.matrix_world = self.org_matrix
+        self.exit(context)
 
     def back_to_object(self, context):
         mat = self.source.matrix_world.inverted() @ self.peel.matrix_world
@@ -352,33 +360,41 @@ class GPOP_OT_onion_peel_tranform(bpy.types.Operator):
 
     def modal(self, context, event):
         context.area.header_text_set(f'Move onion peel: use G:move / R:rotate / S:scale / M:mirror')
+        # Artificial lock frame
+        if context.scene.frame_current != self.init_frame:
+            context.scene.frame_current = self.init_frame
+
         # lock everything except G R S clic
         if event.type in {'G', 'R', 'S', 'LEFTMOUSE', 'RIGHTMOUSE'}:
-            print('Transform')
-            return {'PASS_THROUGH'}
-        
-        if event.type in {'G', 'R', 'S', 'LEFTMOUSE', 'RIGHTMOUSE'}:
-            print('Transform')
             return {'PASS_THROUGH'}
 
-        if event.type in {'ESC'}:
-            print('Escape!')
-            self.peel.matrix_world = self.org_matrix
-            self.exit(context)
+        if event.type in {'X'} and event.value == 'PRESS':
+            self.peel.matrix_world @= Matrix.Rotation(pi, 4, 'Z')
+            return {'RUNNING_MODAL'}
+        
+        if event.type in {'TAB'} and event.value == 'PRESS':
+            if event.type == 'TAB' and event.value == 'PRESS':
+                self.tab_press_ct += 1
+            if self.tab_press_ct < 2:
+                self.report({'WARNING'}, "In Peel transform ! Pressing TAB again will Cancel")
+                return {"RUNNING_MODAL"}
+            self.cancel(context)
+            return {"CANCELLED"}
+
+        if event.type in {'ESC', 'DEL'}:
+            self.cancel(context)
             return {"CANCELLED"}
 
         if event.type in {'RET'} and event.value == 'PRESS':
-            print('Enter !')
-            # beck to the right frame
             context.scene.frame_current = self.init_frame
             self.back_to_object(context)
             return {"FINISHED"}
 
         return {'RUNNING_MODAL'}
+
+
+
 '''
-
-
-
 class GPOP_OT_onion_peel_tranform(bpy.types.Operator):
     bl_idname = "gp.onion_peel_tranform"
     bl_label = "Peel Transform"
@@ -430,6 +446,7 @@ class GPOP_OT_onion_peel_tranform(bpy.types.Operator):
         ## TODO >> having the selection outline is "relou" for simple strokes
 
         return {"FINISHED"}
+'''
 
 class GPOP_OT_onion_back_to_object(bpy.types.Operator):
     bl_idname = "gp.onion_back_to_object"

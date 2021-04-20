@@ -16,26 +16,33 @@ class GPOP_PT_onion_skinning_ui(bpy.types.Panel):
         #-## PEEL TRANSFORM PANEL
         if ob.name.startswith('.peel_'):
             layout.label(text='-- Peel object edit --')
-            layout.label(text='Use transforms to place onion peel')
-            layout.label(text='/!\ Use only object mode /!\ ')
+            layout.label(text='Transforms onion peel')
+            layout.label(text='Controls') # modal infos
+            layout.label(text='ENTER to Valid') # modal infos
+            layout.label(text='ESC to Cancel') # modal infos
+            layout.label(text='G/R/S to Transform') # modal infos
+            layout.label(text='X to Flip') # modal infos
+            layout.label(text='---')
+
+            # layout.label(text='/!\ Use only object mode /!\ ')
 
             # Flip X/Y (global)
-            row=layout.row()
-            row.operator_context = 'EXEC_DEFAULT'
-            rot = row.operator('transform.rotate', text='Flip X', icon='MOD_MIRROR')
-            rot.orient_axis='Z'
-            rot.orient_type='GLOBAL'
-            rot.value=3.14159
+            # row=layout.row()
+            # row.operator_context = 'EXEC_DEFAULT'
+            # rot = row.operator('transform.rotate', text='Flip X', icon='MOD_MIRROR')
+            # rot.orient_axis='Z'
+            # rot.orient_type='GLOBAL'
+            # rot.value=3.14159
             
-            rot = row.operator('transform.rotate', text='Flip Z', icon='EMPTY_SINGLE_ARROW')
-            rot.orient_axis='X'
-            rot.orient_type='GLOBAL'
-            rot.value=3.14159
+            # rot = row.operator('transform.rotate', text='Flip Z', icon='EMPTY_SINGLE_ARROW')
+            # rot.orient_axis='X'
+            # rot.orient_type='GLOBAL'
+            # rot.value=3.14159
             
-            layout.separator()
-            row=layout.row()
-            row.scale_y = 2.0
-            row.operator('gp.onion_back_to_object', text='Back To GP', icon='LOOP_BACK')
+            # layout.separator()
+            # row=layout.row()
+            # row.scale_y = 2.0
+            # row.operator('gp.onion_back_to_object', text='Back To GP', icon='LOOP_BACK')
             return
 
         row = layout.row(align=False)

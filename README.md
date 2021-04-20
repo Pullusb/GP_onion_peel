@@ -34,6 +34,11 @@ Bonus:
 
 ## Changelog:
 
+
+0.5.4
+
+- feat: Modal during peel transform to prevent user from making mistake
+
 0.5.3
 
 - feat: added option to re-edit the custom transformation
