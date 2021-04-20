@@ -352,6 +352,7 @@ def update_onion(self, context):
             mat, scale = get_new_matrix_with_offset(context, ob, offset=count)
             peel.matrix_world = mat
             peel.scale = scale
+            peel['depth_offset'] = count # save offset to counter it for outapeg pos
 
             # ops here is a superbad idea (just comment to get the idea of whatta-do)
             # bpy.ops.object.origin_set({"selected_editable_objects": peel}, type='ORIGIN_GEOMETRY', center='MEDIAN')

@@ -53,9 +53,6 @@ def restore_onion(dummy):
         # launch a refresh
         onion.update_onion(dummy, bpy.context)
 
-
-
-
 def register():
     properties.register()
     OT_onion_peel.register()
