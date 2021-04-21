@@ -14,7 +14,7 @@ class GPOP_PGT_frame_settings(bpy.types.PropertyGroup):
     # matrix : FloatVectorProperty(subtype='MATRIX', size=16, options={'HIDDEN'}) # default=(0.0, 0.0, 0.0, 0.0), 
     # transformed : BoolProperty(default=False) #Tell if a transform (matrix) is applied to the peel.
     
-    ## works like this
+    #-# add or remove collection prop elements
     # frames[0].add()
     # frames.remove(index)
 

@@ -371,8 +371,8 @@ class GPOP_OT_onion_peel_tranform(bpy.types.Operator):
         self.exit(context)
 
     def modal(self, context, event):
-        context.area.header_text_set(f'Move onion peel: use G:move / R:rotate / S:scale / M:mirror')
-        # Artificial lock frame
+        context.area.header_text_set(f'Pick onion peel - use G:move / R:rotate / S:scale / X,M:mirror')
+        # lock frame
         if context.scene.frame_current != self.init_frame:
             context.scene.frame_current = self.init_frame
 
@@ -380,8 +380,11 @@ class GPOP_OT_onion_peel_tranform(bpy.types.Operator):
         if event.type in {'G', 'R', 'S', 'LEFTMOUSE', 'RIGHTMOUSE', 'MIDDLEMOUSE'}:
             return {'PASS_THROUGH'}
 
-        if event.type in {'X'} and event.value == 'PRESS':
-            self.peel.matrix_world @= Matrix.Rotation(pi, 4, 'Z')
+        if event.type in {'X', 'M'} and event.value == 'PRESS':
+            if event.shift: # flip vertical
+                self.peel.matrix_world @= Matrix.Rotation(pi, 4, 'X')
+            else: # flip horizontal
+                self.peel.matrix_world @= Matrix.Rotation(pi, 4, 'Z')
             return {'RUNNING_MODAL'}
         
         if event.type in {'TAB'} and event.value == 'PRESS':
@@ -403,7 +406,6 @@ class GPOP_OT_onion_peel_tranform(bpy.types.Operator):
             return {"FINISHED"}
 
         return {'RUNNING_MODAL'}
-
 
 
 '''

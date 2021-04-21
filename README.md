@@ -41,6 +41,10 @@ Bonus:
 ## Changelog:
 
 
+0.6.1
+
+- feat: shift+X to flip top bottom in custom transformation
+
 0.6.0
 
 - pref: added addon preferences
