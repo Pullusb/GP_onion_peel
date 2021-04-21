@@ -11,7 +11,7 @@ class GPOP_PT_onion_skinning_ui(bpy.types.Panel):
             return
         settings = context.scene.gp_ons_setting
         layout = self.layout
-        # layout = layout.column_flow(columns=0, align=True)
+        layout = layout.column_flow(columns=0, align=False)
 
         #-## PEEL TRANSFORM PANEL
         if ob.name.startswith('.peel_'):
@@ -53,18 +53,31 @@ class GPOP_PT_onion_skinning_ui(bpy.types.Panel):
         state = 'Enabled' if settings.activated else 'Disabled'
         row.prop(settings, 'activated', text=state, emboss=True, icon=icon)
         row.prop(settings, 'world_space', text='World Space')
-        row.prop(settings, 'depth_offset', text='Depth')
+        # row.prop(settings, 'depth_offset', text='Depth')
         # row.prop(settings, 'only_active', text='Only Active')
+        
         row = layout.row(align=False)
         row.operator('gp.onion_peel_refresh', text='Refresh', icon='ONIONSKIN_ON') # FILE_REFRESH
         row.operator('gp.onion_peel_delete', text='Delete', icon='LOCKVIEW_OFF')
-        row = layout.row(align=False)
+        
+        row = layout.row(align=True)
         # layout.prop(settings, 'offset_mode') # WIP
         row.prop(settings, 'keyframe_type', text='Filter')
+        row.separator()
+        
+        # row.prop(settings, 'xray', text='All X-ray', icon='XRAY') # xray bool update swap
+        # row.label(text='X-ray')
+        row.scale_x = 0.69
+        row.operator('gp.onion_swap_xray', text='X-ray On', icon='XRAY').use_xray = True # xray ops swap
+        row.operator('gp.onion_swap_xray', text='Off').use_xray = False # xray ops swap
+
+        # expected (data, property, text, text_ctxt, translate, icon, expand, slider, toggle, icon_only, event, full_event, emboss, index, icon_value, invert_checkbox)
+        
         row = layout.row(align=True)
         row.prop(settings, 'before_num', text='')
         row.prop(settings, 'before_color', text='')
         # row.prop(ob.data, 'before_color', text='') # propertie if custom
+        
         row.separator()
         row.prop(settings, 'after_color', text='')
         # row.prop(ob.data, 'after_color', text='') # propertie if custom

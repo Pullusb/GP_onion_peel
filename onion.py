@@ -2,6 +2,7 @@ import bpy
 from bpy.app.handlers import persistent
 from time import time
 from mathutils import Matrix, Vector
+from . import preferences
 
 def to_onion_name(name):
     return f'.onion_{name}'
@@ -229,6 +230,7 @@ def update_onion(self, context):
 
     peelname = to_peel_name(ob.name)
     
+    depth_offset = preferences.get_addon_prefs().depth_offset
     cur_frame = scene.frame_current
     settings = scene.gp_ons_setting
     opacity_factor = settings.o_general / 100
@@ -289,7 +291,7 @@ def update_onion(self, context):
         else:
             peel.data = data
 
-        peel.show_in_front = True
+        peel.show_in_front = ob.show_in_front
         peel['index'] = num
         used.append(peel)
         
@@ -345,7 +347,7 @@ def update_onion(self, context):
             peel.matrix_world = ob.matrix_world @ eval(f"Matrix({peel['outapeg']})")
         
         else:
-            count += settings.depth_offset
+            count += depth_offset # settings.depth_offset
             # if not settings.world_space or not mark: (apply without settting frame current)
             if settings.world_space and mark: 
                 context.scene.frame_set(mark)
@@ -353,13 +355,6 @@ def update_onion(self, context):
             peel.matrix_world = mat
             peel.scale = scale
             peel['depth_offset'] = count # save offset to counter it for outapeg pos
-
-            # ops here is a superbad idea (just comment to get the idea of whatta-do)
-            # bpy.ops.object.origin_set({"selected_editable_objects": peel}, type='ORIGIN_GEOMETRY', center='MEDIAN')
-            # calculate ORIGIN_GEOMETRY position, set the origin there and apply the inverse to drawing...
-            # maybe just need a good modal...
-
-            # context.scene.cursor.location = peel.matrix_world.translation # debug
 
     # get back to original current frame
     if settings.world_space:
@@ -441,6 +436,22 @@ def update_peel_color(self, context):
         #         m.color = color
 
 
+# not used, use an ops instead
+def update_peel_xray(self, context):
+    settings = context.scene.gp_ons_setting
+    op_col = bpy.data.collections.get('.onion_peels')
+    if not op_col:
+        return
+    peel_col = op_col.children.get(to_onion_name(context.object.name))
+    if not peel_col:
+        return
+    context.object.show_in_front = settings.xray
+    for peel in peel_col.objects:
+        peel.show_in_front = settings.xray
+        
+
+## TODO case of multi GP update...
+
 # def switch_onion(self, context):
 #     if context.scene.gp_ons_setting.activated:
 #         bpy.ops.gp.onion_peel_refresh(called=True)
@@ -453,198 +464,3 @@ def update_peel_color(self, context):
 #     else:
 #         for o in context.scene.objects:
 #             update_ob_onion(context, o)
-
-""" 
-@persistent
-def update_onion(self, context):
-    # t0 = time()
-    ob = bpy.context.object
-    if not ob or ob.type != 'GPENCIL' or ob.name.startswith('.peel'):
-        return
-    
-    scene = context.scene
-
-    #/ Handle display
-    op_col = bpy.data.collections.get('.onion_peels')
-    if not scene.gp_ons_setting.activated:
-        if op_col:
-            op_col.hide_viewport = True
-        return
-
-    if bpy.context.screen.is_animation_playing:
-        if op_col:
-            op_col.hide_viewport = True
-        # dont do anything and leave
-        return
-
-    gpl = ob.data.layers
-    if not [l for l in gpl if l.use_onion_skinning]: # Skip if no onion layers
-        return
-
-    scene.gp_ons_setting.activated = False #Mtx avoid infinite recursion
-    
-    # orignal Matrix ?
-    # mat = ob.matrix_world.copy()
-    # mat_offset = get_new_matrix_with_offset(context, ob)
-
-    ## TODO (optimise clean withing update ?)
-    # clean_peels()
-
-    # generate_onion_peels(bpy.context)
-    op_col, peel_col = create_peel_col(bpy.context)
-
-    op_col.hide_viewport = False
-    # Handle display/
-
-    peelname = to_peel_name(ob.name)
-    
-    cur_frame = scene.frame_current
-    settings = scene.gp_ons_setting
-    opacity_factor = settings.o_general / 100
-    gprev = settings.before_num
-    gnext = settings.after_num
-
-    for _ in range(gprev - len(settings.neg_frames) + 1):
-        f = settings.neg_frames.add()
-    for _ in range(gnext - len(settings.pos_frames) + 1):
-        f = settings.pos_frames.add()
-
-    peel = None
-    used = []
-    layers = []
-    no_onion_lays = [l.info for l in gpl if not l.use_onion_skinning]
-    
-    ## calculate all frame index by layer Once
-    for l in gpl:
-        info = l.info
-        frames = [f.frame_number for f in l.frames]
-        if not frames: # complete skip of empty layers
-            continue
-        previous = [f for f in frames if f < cur_frame]
-        following = [f for f in frames if f > cur_frame]
-        layers.append([info, previous, following])
-
-    count = 0
-    for num in [-i for i in range(1,gprev+1)] + [i for i in range(1,gnext+1)]:
-        absnum = abs(num)
-
-        # get / create the peel object
-        peel_name = f'{peelname} {num}'
-        peel = op_col.all_objects.get(peel_name)
-        if not peel:
-            peel = bpy.data.objects.new(peel_name, ob.data)
-            peel.hide_select = True
-            peel.use_grease_pencil_lights = False
-            peel_col.objects.link(peel)
-        
-        peel['index'] = num
-        used.append(peel)
-        pgm = peel.grease_pencil_modifiers
-        # COLOR
-        tint = pgm.get('peel_color')
-        if not tint:
-            # if first creation initiate the tint
-            tint = pgm.new('peel_color','GP_TINT')
-            tint.factor = 1.0
-            tint.show_expanded = False
-            if peel['index'] < 0:
-                tint.color = settings.before_color # ob.data.before_color
-            else:
-                tint.color = settings.after_color # ob.data.after_color
-
-        mark_prev = []
-        mark_next = []
-        for layer in layers:
-            info, previous, following = layer[:]
-            
-            mark = None
-            if num < 0:
-                fsetting = settings.neg_frames[abs(num)]
-                if absnum < len(previous)+1:   
-                    mark = previous[num]
-                    mark_prev.append(mark)
-            else:
-                fsetting = settings.pos_frames[num]
-                if absnum < len(following)+1:
-                    mark = following[num-1]
-                    mark_next.append(mark)
-
-            # hide and skip non displayed onion layer of out for range ones
-            if mark is None:
-                peel.matrix_world = ob.matrix_world
-                set_layer_opacity_by_mod(pgm, info, 0)
-                continue
-            
-            # TIME OFFSET
-            mod_time = pgm.get(f'{info}_time')
-            if not mod_time:
-                mod_time = pgm.new(f'{info}_time','GP_TIME')
-                mod_time.use_keep_loop = False
-                mod_time.mode = 'FIX'
-                mod_time.layer = info
-                mod_time.show_expanded = False
-            mod_time.offset = mark # - cur_frame
-
-            # OPACITY
-            set_layer_opacity_by_mod(pgm, info, fsetting.opacity / 100 * opacity_factor)
-
-        # hide non concerned layer
-        for info in no_onion_lays:
-            set_layer_opacity_by_mod(pgm, info, 0)
-        
-        # set position in space (change mark to be the closet frame)
-        if mark:
-            if num < 0:
-                mark = sorted(mark_prev)[-1]
-            else:
-                mark = sorted(mark_next)[0]
-
-        peel['frame'] = mark # can be None
-
-        ## assigning world matrix:
-        if peel.get('outapeg'):
-            ## DIRECT MATRIX assignation
-            # peel.matrix_world = eval(f"Matrix({peel['outapeg']})")
-            ## DIFF MATRIX at time of modification
-            peel.matrix_world = ob.matrix_world @ eval(f"Matrix({peel['outapeg']})")
-        
-        else:
-            count += settings.depth_offset
-            if not settings.world_space or not mark:
-                # peel.matrix_world = mat
-                peel.matrix_world = get_new_matrix_with_offset(context, ob, offset=count)
-            else:
-                context.scene.frame_set(mark)
-                # peel.matrix_world = ob.matrix_world.copy()
-                peel.matrix_world = get_new_matrix_with_offset(context, ob, offset=count)
-                # context.scene.cursor.location = peel.matrix_world.translation
-
-    if settings.world_space:
-        context.scene.frame_set(cur_frame)
-    
-    # Delete too much peels
-    for o in peel_col.objects:
-        if o not in used:
-            bpy.data.objects.remove(o)
-            continue
-    
-    # ! Data duplication ! --'
-    # linked data make the stroke disappear in editing modes !
-    # TODO maybe add a mode to choose "performance for linked"
-    if used:
-        old = used[0].data
-        data_dup = ob.data.copy()
-        data_dup.name = ob.data.name + '_copy'
-        for o in used:
-            o.data = data_dup
-        
-        # remove old
-        if old is not ob.data:
-            bpy.data.grease_pencils.remove(old)
-
-    scene.gp_ons_setting.activated = True #Mtx avoid infinite recursion
-    op_col.hide_viewport = peel_col.hide_viewport = False
-    
-    for c in op_col.children:
-        c.hide_viewport = c is not peel_col
-"""

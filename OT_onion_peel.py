@@ -2,6 +2,7 @@ import bpy
 from . import onion
 from math import pi
 from mathutils import Matrix, Vector
+
 class GPOP_OT_onion_skin_delete(bpy.types.Operator):
     bl_idname = "gp.onion_peel_delete"
     bl_label = "Delete Onion_Skin"
@@ -318,7 +319,18 @@ class GPOP_OT_onion_peel_tranform(bpy.types.Operator):
         if not peel:
             self.report({'ERROR'}, f'Could not find this Onion peel, it might no exists yet ! \nTry refreshing first.')
             return {"CANCELLED"}
+        # check if no frames
 
+        ok = False
+        for l in peel.data.layers:
+            for f in l.frames:
+                ok = True
+                break
+        if not ok:
+            self.report({'WARNING'}, f'This peel is empty (probably out keyframe of range)')
+            return {"CANCELLED"}
+
+    
         self.gp_last_mode = context.mode
         self.org_matrix = peel.matrix_world.copy()
         self.init_frame = context.scene.frame_current
@@ -365,7 +377,7 @@ class GPOP_OT_onion_peel_tranform(bpy.types.Operator):
             context.scene.frame_current = self.init_frame
 
         # lock everything except G R S clic
-        if event.type in {'G', 'R', 'S', 'LEFTMOUSE', 'RIGHTMOUSE'}:
+        if event.type in {'G', 'R', 'S', 'LEFTMOUSE', 'RIGHTMOUSE', 'MIDDLEMOUSE'}:
             return {'PASS_THROUGH'}
 
         if event.type in {'X'} and event.value == 'PRESS':
@@ -538,33 +550,44 @@ class GPOP_OT_onion_reset_peel_transform(bpy.types.Operator):
             self.report({'ERROR'}, f'Could not find this Onion peel!\nTry refreshing')
             return {"CANCELLED"}
 
-
-        """ 
-        # RESET THE transform (not usable for now as it trigger frame set):
-        #   - by reading the frame in fixed time_offset
-        #   - evaluating the position from frame in source object (ob) fcurve
-
-        if not context.scene.gp_ons_setting.word_space:
-            peel.matrix_world = ob.matrix_world
-        
-        else:
-            # world mode
-            mat_offset = onion.get_depth_offset(context, ob)            
-            f = peel['frame'] <-< can be not setted if no mark waas found in any layer.
-            current = context.scene.frame_current
-            print(f'restoring at matrix from frame {f}')
-            context.scene.frame_set(f) # triggering reevaluation through frame_set() !
-            peel.matrix_world = ob.matrix_world # matrix world AFTER frame change
-            if mat_offset:
-                peel.matrix_world.translation += mat_offset
-            context.scene.frame_set(current)
-        """
-
         del peel['outapeg']
         # since the propery is deleted the reevaluation will reset it
         onion.update_onion(self, context)
         bpy.ops.ed.undo_push(message='Reset Peel transform')
         return {"FINISHED"}
+
+
+class GPOP_OT_onion_swap_xray(bpy.types.Operator):
+    bl_idname = "gp.onion_swap_xray"
+    bl_label = "Onion Swap Xray"
+    bl_description = "Toggle In Front for both object and it's peel\nShit + clic to only affect peels"
+    bl_options = {"REGISTER", "UNDO"}
+
+    use_xray = bpy.props.BoolProperty()
+
+    @classmethod
+    def poll(cls, context):
+        return context.object and context.object.type == 'GPENCIL'
+    
+    def invoke(self, context, event):
+        self.peel_only = event.shift
+        return self.execute(context)
+
+    def execute(self, context):
+        op_col = bpy.data.collections.get('.onion_peels')
+        if not op_col:
+            return {"CANCELLED"}
+        peel_col = op_col.children.get(onion.to_onion_name(context.object.name))
+        if not peel_col:
+            return {"CANCELLED"}
+        if not self.peel_only:
+            context.object.show_in_front = self.use_xray
+
+        for peel in peel_col.objects:
+            peel.show_in_front = self.use_xray
+
+        return {"FINISHED"}
+
 
 ### --- REGISTER ---
 
@@ -575,6 +598,7 @@ GPOP_OT_onion_peel_pyramid_fade,
 GPOP_OT_onion_peel_tranform,
 GPOP_OT_onion_back_to_object,
 GPOP_OT_onion_reset_peel_transform,
+GPOP_OT_onion_swap_xray,
 )
 
 # TODO Add handler on frame post to refresh the timeline offset

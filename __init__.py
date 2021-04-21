@@ -2,10 +2,10 @@ bl_info = {
     "name": "GP Onion Peel",
     "description": "Custom Onion skinning using refreshed linked GP duplications",
     "author": "Samuel Bernou",
-    "version": (0, 5, 4),
+    "version": (0, 6, 0),
     "blender": (2, 92, 0),
     "location": "View3D",
-    "warning": "Beta",
+    "warning": "Stable beta",
     "doc_url": "https://github.com/Pullusb/GP_onion_peel",
     "category": "Object" }
 
@@ -15,6 +15,7 @@ if 'bpy' in locals():
     imp.reload(OT_peel_modal)
     imp.reload(properties)
     imp.reload(ui_panels)
+    imp.reload(preferences)
     imp.reload(onion)
 
 else:
@@ -22,12 +23,12 @@ else:
     from . import OT_peel_modal
     from . import properties
     from . import ui_panels
+    from . import preferences
     from . import onion
 
 
 from . import onion
 
-# from . import preferences
 
 import bpy
 from bpy.app.handlers import persistent
@@ -70,19 +71,34 @@ def restore_onion(dummy):
     onion.update_onion(dummy, bpy.context)
 
 
+@persistent
+def load_onion(dummy):
+    # restricted context during register so needed here.
+    pref = preferences.get_addon_prefs()
+    if pref.use_default_color:
+        bpy.context.scene.gp_ons_setting.before_color = pref.default_before_color
+        bpy.context.scene.gp_ons_setting.after_color = pref.default_after_color
+
+
 def register():
+    preferences.register()
     properties.register()
     OT_onion_peel.register()
     OT_peel_modal.register()
     ui_panels.register()
+    
+    #-# assign default color if needed
+    ## CANT DO here - restricted context
 
     bpy.app.handlers.frame_change_post.append(onion.update_onion)
 
     bpy.app.handlers.save_pre.append(delete_onion)
     bpy.app.handlers.save_post.append(restore_onion)
+    bpy.app.handlers.load_post.append(load_onion)
 
 def unregister():
 
+    bpy.app.handlers.load_post.remove(load_onion)
     bpy.app.handlers.save_pre.remove(delete_onion)
     bpy.app.handlers.save_post.remove(restore_onion)
 
@@ -92,6 +108,7 @@ def unregister():
     OT_peel_modal.unregister()
     OT_onion_peel.unregister()
     properties.unregister()
+    preferences.unregister()
 
 if __name__ == "__main__":
     register()

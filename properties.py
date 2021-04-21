@@ -1,5 +1,6 @@
 import bpy
-from .onion import update_onion, update_opacity, update_peel_color#, switch_onion
+from . import preferences
+from .onion import update_onion, update_opacity, update_peel_color, update_peel_xray#, switch_onion
 
 from bpy.props import BoolProperty, EnumProperty, \
     IntProperty, FloatVectorProperty, CollectionProperty, \
@@ -30,9 +31,9 @@ class GPOP_PGT_settings(bpy.types.PropertyGroup):
     world_space : BoolProperty(name='World Space', default=False,
         description='Consider the object animation to place onion peels in world space (Else local space)\nIf your GP object does not move, disable for better performance')
 
-    depth_offset : FloatProperty(name='Depth offset', default=0.025, 
-        description='offset the onion peel in the depth from camera (increment if peels are overlapping each other in)',
-        update=update_onion)
+    # depth_offset : FloatProperty(name='Depth offset', default=0.025, min=0.001, max=10, precision=3, step=4,
+    #     description='offset the onion peel in the depth from camera (increment if peels are overlapping each other in)',
+    #     update=update_onion)
 
     offset_mode : EnumProperty(
         name="Mode", description="Ghost offset mode", default='KEYS', options={'HIDDEN'}, update=None, get=None, set=None,
@@ -42,8 +43,9 @@ class GPOP_PGT_settings(bpy.types.PropertyGroup):
             ))
         # (key, label, descr, id[, icon])
 
-    xray : BoolProperty(name='X-ray', default=True,
-        description='Show both object and ')
+    # xray : BoolProperty(name='X-ray', default=False,
+    #     description='Set "In Front" mode for both object and the onion peels',
+    #     update=update_peel_xray)
 
 
     keyframe_type : EnumProperty(
@@ -58,6 +60,9 @@ class GPOP_PGT_settings(bpy.types.PropertyGroup):
             ('JITTER', 'Jitter', '', 'KEYTYPE_JITTER_VEC', 5),
             ))
 
+    # prefs is None at register
+    # prefs = preferences.get_addon_prefs()
+    # prefs.default_before_color
 
     before_color : FloatVectorProperty(  
         name="Before Color",

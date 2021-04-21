@@ -2,8 +2,6 @@
 
 Blender grease pencil addon to add a custom onion skinning
 
-/!\ Beta 3
-
 **[Download latest](https://github.com/Pullusb/GP_onion_peel/archive/main.zip)**
 
 <!-- ### [Demo Youtube]() -->
@@ -14,6 +12,15 @@ Blender grease pencil addon to add a custom onion skinning
 
 Generate onion skin as individual `.peel` objects in a `.onion_peels` subcollection.
 Those objects are used as onion skinning and can be manipulated to check objects
+
+
+<!-- **Enable/Disable** :  -->
+
+**X-ray on/off** : Button to change In Front value for current object and all it's peel
+note : `shift + click` change only the peels.
+
+> note : It's recommended to work with X-ray mode as the peel have an offset in camera depth
+
 ### Where ?
 
 `Sidebar` > `Gpencil` Tab > `Onion Peel` Panel
@@ -22,17 +29,27 @@ Those objects are used as onion skinning and can be manipulated to check objects
 
 <!--
 ## TODO:
-- refresh choices (now refresh only current):
-    - Add choice to refresh all
 - chose with key placement to use (closest to current frame ? active layer ? both ?)
 
 Bonus:
-- Filter by key type (EZ... I think)
+- refresh choices (now refresh only current):
+    - Add choice to refresh all
 - Direct frame offset mode (instead of key offset), might not be usefull at all...
 
 -->
 
 ## Changelog:
+
+
+0.6.0
+
+- pref: added addon preferences
+    - ui: Depth offset properties is now in addon preferences
+    - feat: Default onion peel color can be set at file opening if toggled on in preferences
+
+- feat: Button to toggle the whole x-ray on or off (both object and peels)
+- feat: Tell if a peel is empty when trying to transform (out of the keyframe range so not displayed)
+- fix: unlock middle-mouse during transform modal
 
 
 0.5.4
