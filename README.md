@@ -41,8 +41,9 @@ Bonus:
 ## Changelog:
 
 
-0.6.2
+0.6.3
 
+- fix: Add clean at update start, fix a crash (editing stroke > change frame > using ctrl-Z)
 - fix: problem when saving with custom transfo
 - code: removed useless eval for custom transform matrix apply
 

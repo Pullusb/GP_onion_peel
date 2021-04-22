@@ -219,8 +219,8 @@ def update_onion(self, context):
     # orignal Matrix ?
     # offseted_mat = get_new_matrix_with_offset(context, ob)
 
-    ## TODO (optimise clean withing update ?)
-    # clean_peels()
+    ## cleaning in update seem to resolve the bug : edit stroke > change frame > ctrl-Z > Crash
+    clean_peels()
 
     # generate_onion_peels(bpy.context)
     op_col, peel_col = create_peel_col(bpy.context)
