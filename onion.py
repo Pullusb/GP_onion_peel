@@ -344,7 +344,7 @@ def update_onion(self, context):
             ## DIRECT MATRIX assignation
             # peel.matrix_world = eval(f"Matrix({peel['outapeg']})")
             ## DIFF MATRIX at time of modification
-            peel.matrix_world = ob.matrix_world @ eval(f"Matrix({peel['outapeg']})")
+            peel.matrix_world = ob.matrix_world @ Matrix(peel['outapeg'])# eval(f"Matrix({peel['outapeg']})")
         
         else:
             count += depth_offset # settings.depth_offset
@@ -378,7 +378,7 @@ def update_onion(self, context):
     for c in op_col.children:
         c.hide_viewport = c is not peel_col
     # print(time() - t0)
-
+    # bpy.ops.ed.undo_push(message=f'Peel update {time()}') # test
 
 def update_opacity(self, context):
     settings = context.scene.gp_ons_setting

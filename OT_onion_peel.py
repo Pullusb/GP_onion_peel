@@ -367,7 +367,7 @@ class GPOP_OT_onion_peel_tranform(bpy.types.Operator):
 
     def back_to_object(self, context):
         mat = self.source.matrix_world.inverted() @ self.peel.matrix_world
-        self.peel['outapeg'] = str(list(mat))
+        self.peel['outapeg'] = mat # str(list(mat))
         self.exit(context)
 
     def modal(self, context, event):
@@ -513,7 +513,7 @@ class GPOP_OT_onion_back_to_object(bpy.types.Operator):
         # else:
         #     mat = source_ob.matrix_world.inverted() @ ob.matrix_world
 
-        ob['outapeg'] = str(list(mat))
+        ob['outapeg'] = mat # str(list(mat))
 
         ob.hide_select = True
         source_ob.select_set(True)
@@ -565,7 +565,7 @@ class GPOP_OT_onion_swap_xray(bpy.types.Operator):
     bl_description = "Toggle In Front for both object and it's peel\nShit + clic to only affect peels"
     bl_options = {"REGISTER", "UNDO"}
 
-    use_xray = bpy.props.BoolProperty()
+    use_xray : bpy.props.BoolProperty()
 
     @classmethod
     def poll(cls, context):

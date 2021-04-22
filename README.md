@@ -41,6 +41,11 @@ Bonus:
 ## Changelog:
 
 
+0.6.2
+
+- fix: problem when saving with custom transfo
+- code: removed useless eval for custom transform matrix apply
+
 0.6.1
 
 - feat: shift+X to flip top bottom in custom transformation

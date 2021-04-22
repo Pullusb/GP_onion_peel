@@ -2,7 +2,7 @@ bl_info = {
     "name": "GP Onion Peel",
     "description": "Custom Onion skinning using refreshed linked GP duplications",
     "author": "Samuel Bernou",
-    "version": (0, 6, 1),
+    "version": (0, 6, 2),
     "blender": (2, 92, 0),
     "location": "View3D",
     "warning": "Stable beta",
@@ -69,6 +69,7 @@ def restore_onion(dummy):
         ob['outapeg'] = outapeg
     # re-refresh to set the offset
     onion.update_onion(dummy, bpy.context)
+    del bpy.types.ViewLayer.onion_custom_transform
 
 
 @persistent
