@@ -57,7 +57,7 @@ class GPOP_addon_prefs(bpy.types.AddonPreferences):
 
             box = layout.box()
             col = box.column()
-            col.prop(self, 'use_default_color', text='Set following Opnion peel color when opening a blend file')
+            col.prop(self, 'use_default_color', text='Set following Onion peel color when opening a blend file')
             row = col.row()
             row.enabled = self.use_default_color
             row.prop(self, 'default_before_color')

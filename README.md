@@ -45,7 +45,7 @@ Bonus:
 0.6.4
 
 - fix: errors with on save transfo save
-- rollback to previous refresh method: (crash still occur on edit + cltr+Z)
+- rollback to previous refresh method: (crash still occur on edit + ctrl+Z)
 
 0.6.3
 
