@@ -61,6 +61,7 @@ class GPOP_PT_onion_skinning_ui(bpy.types.Panel):
         row.operator('gp.onion_peel_delete', text='Delete', icon='LOCKVIEW_OFF')
         
         row = layout.row(align=True)
+        # row = layout.split(align=False, factor=0.5)
         # layout.prop(settings, 'offset_mode') # WIP
         row.prop(settings, 'keyframe_type', text='Filter')
         row.separator()
@@ -68,7 +69,7 @@ class GPOP_PT_onion_skinning_ui(bpy.types.Panel):
         # row.prop(settings, 'xray', text='All X-ray', icon='XRAY') # xray bool update swap
         # row.label(text='X-ray')
         row.scale_x = 0.69
-        row.operator('gp.onion_swap_xray', text='X-ray On', icon='XRAY').use_xray = True # xray ops swap
+        row.operator('gp.onion_swap_xray', text='X-ray', icon='XRAY').use_xray = True # xray ops swap
         row.operator('gp.onion_swap_xray', text='Off').use_xray = False # xray ops swap
 
         # expected (data, property, text, text_ctxt, translate, icon, expand, slider, toggle, icon_only, event, full_event, emboss, index, icon_value, invert_checkbox)
@@ -84,8 +85,8 @@ class GPOP_PT_onion_skinning_ui(bpy.types.Panel):
         row.prop(settings, 'after_num', text='')        
         
         col = layout.column()
+
         ### PROPERTIE BASED PANEL
-        # for i in sorted([0] + [i*j for j in [1,-1] for i in range(1,num_to_display+1)]):
         for i in [-i for i in range(1, settings.before_num+1)][::-1] + [0] + [i for i in range(1, settings.after_num+1)]:
             if i == 0:
                 ###  MIDDLE LINE
@@ -139,33 +140,6 @@ class GPOP_PT_onion_skinning_ui(bpy.types.Panel):
             # pid = f'p{abs(i)}' if i < 0 else f'n{i}'
             row.prop(fsetting, 'opacity', text='', slider=True)
             row.prop(fsetting, 'visibility', text='', icon='HIDE_OFF')
-
-            # (data, property, text, text_ctxt, translate, icon, expand, slider, toggle, icon_only, event, full_event, emboss, index, icon_value
-
-        #### OBJECT BASED PANEL
-        # for i in sorted([0] + [i*j for j in [1,-1] for i in range(1,num_to_display+1)]):
-        #     if i == 0:
-        #         layout.separator()
-        #         layout.label(text='-')
-        #         layout.separator()
-        #     peel = context.scene.objects.get(f'{ob.name} {i}')
-        #     if not peel:
-        #         continue # need to display a placeholder prop (or create a GP place holder ?)
-
-        #     row = layout.row(align=True)
-        #     # CHECKBOX_DEHLT, CHECKBOX_HLT # TODO show/hide with checkboxes (more clear)
-            
-        #     row.label(icon_only=True, icon='DOT')
-        #     row.prop(peel.grease_pencil_modifiers['opacity'], 'factor', text='', slider=True)
-        #     row.prop(peel, 'hide_viewport', icon_only=True, icon = 'HIDE_OFF')
-
-        # layout.prop(settings, 'p3')
-        # layout.prop(settings, 'p2')
-        # layout.prop(settings, 'p1')
-        # layout.prop(settings, 'cur')
-        # layout.prop(settings, 'n1')
-        # layout.prop(settings, 'n2')
-        # layout.prop(settings, 'n3')
 
 ### --- REGISTER ---
 

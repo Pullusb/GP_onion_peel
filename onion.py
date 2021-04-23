@@ -2,6 +2,7 @@ import bpy
 from bpy.app.handlers import persistent
 from time import time
 from mathutils import Matrix, Vector
+import random
 from . import preferences
 
 def to_onion_name(name):
@@ -54,6 +55,8 @@ def clear_peels(full_clear=False):
 def clear_current_peel(ob):
     name = ob.name
     col = bpy.data.collections.get(to_onion_name(name))
+    if not col:
+        return
     for o in col.all_objects:
         bpy.data.objects.remove(o)
     bpy.data.collections.remove(col)
@@ -69,9 +72,10 @@ def clean_peels():
         return
     for c in op_col.children:
         # name -> '.peel_obj_name'
-        source_obj_name = c.name[len('.peel_'):]
+        source_obj_name = c.name[len('.onion_'):]
         if not bpy.context.scene.objects.get(source_obj_name):
             for o in c.all_objects:
+                print('in clean : deleted', o.name) #dbg
                 bpy.data.objects.remove(o)
             bpy.data.collections.remove(c)
     
@@ -219,11 +223,16 @@ def update_onion(self, context):
     # orignal Matrix ?
     # offseted_mat = get_new_matrix_with_offset(context, ob)
 
-    ## cleaning in update seem to resolve the bug : edit stroke > change frame > ctrl-Z > Crash
+    ## deleting recreating seem to resolve the bug : edit stroke > change frame > ctrl-Z > Crash
+    
     clean_peels()
+    # clear_current_peel(ob)
 
     # generate_onion_peels(bpy.context)
     op_col, peel_col = create_peel_col(bpy.context)
+
+    # for o in peel_col.all_objects:
+        # o.data.materials.clear()
 
     op_col.hide_viewport = False
     # Handle display/
@@ -278,8 +287,8 @@ def update_onion(self, context):
         # get / create the peel object
         peel_name = f'{peelname} {num}'
         peel = op_col.all_objects.get(peel_name)
-        data = bpy.data.grease_pencils.new(peel_name)
 
+        data = bpy.data.grease_pencils.new(peel_name)#f'{peel_name} {random.randint(0,50000)}')
         for m in ob.data.materials: # get same material stack
             data.materials.append(m)
 
@@ -289,6 +298,18 @@ def update_onion(self, context):
             peel.use_grease_pencil_lights = False
             peel_col.objects.link(peel)
         else:
+            #-# try storing outapeg and kill-recreate
+            # outapeg = peel.get('outapeg')
+            # bpy.data.objects.remove(peel)
+            
+            # peel = bpy.data.objects.new(peel_name, data)
+            # peel.hide_select = True
+            # peel.use_grease_pencil_lights = False
+            # peel_col.objects.link(peel)
+            # if outapeg:
+            #     peel['outapeg'] = outapeg
+
+            #-# previously only this in else:
             peel.data = data
 
         peel.show_in_front = ob.show_in_front
@@ -354,7 +375,7 @@ def update_onion(self, context):
             mat, scale = get_new_matrix_with_offset(context, ob, offset=count)
             peel.matrix_world = mat
             peel.scale = scale
-            peel['depth_offset'] = count # save offset to counter it for outapeg pos
+            # peel['depth_offset'] = count # save offset to counter it for outapeg pos
 
     # get back to original current frame
     if settings.world_space:

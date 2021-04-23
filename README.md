@@ -40,6 +40,12 @@ Bonus:
 
 ## Changelog:
 
+<!-- - ux: prevent custom transform if onion peel is disabled -->
+
+0.6.4
+
+- fix: errors with on save transfo save
+- rollback to previous refresh method: (crash still occur on edit + cltr+Z)
 
 0.6.3
 

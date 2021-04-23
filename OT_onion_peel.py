@@ -309,6 +309,10 @@ class GPOP_OT_onion_peel_tranform(bpy.types.Operator):
     peel_num : bpy.props.IntProperty()
 
     def invoke(self, context, event):
+        if not context.scene.gp_ons_setting.activated:
+            self.report({'WARNING'}, f'Onion Peels are disabled\nEnable or refresh first')
+            return {"CANCELLED"}
+
         if not self.peel_num:
             self.report({'ERROR'}, f'Peel number seems not valid : {self.peel_num}\nTry refreshing')
             return {"CANCELLED"}
@@ -319,8 +323,8 @@ class GPOP_OT_onion_peel_tranform(bpy.types.Operator):
         if not peel:
             self.report({'ERROR'}, f'Could not find this Onion peel, it might no exists yet ! \nTry refreshing first.')
             return {"CANCELLED"}
+        
         # check if no frames
-
         ok = False
         for l in peel.data.layers:
             for f in l.frames:
@@ -345,11 +349,20 @@ class GPOP_OT_onion_peel_tranform(bpy.types.Operator):
 
         self.source = ob
         
+        
+        # Handle selectability (store and disable all objects selection)
+        # peelcol = peel.users_collection[0]
+        # self.select_list = [(o, o.hide_select) for o in context.scene.objects]
+        # for o in context.scene.objects:
+        #     if not peelcol in o.users_collection:
+        #         o.hide_select = True
+
         # launching ops dont work
         # bpy.ops.transform.translate() 
         context.window_manager.modal_handler_add(self)
         return {'RUNNING_MODAL'}
     
+
     def exit(self, context):
         self.peel.hide_select = True
         self.source.select_set(True)
@@ -359,6 +372,11 @@ class GPOP_OT_onion_peel_tranform(bpy.types.Operator):
         # restore mode
         context.area.header_text_set(None)
         bpy.ops.object.mode_set(mode=self.gp_last_mode)
+
+        # restore selection
+        # for o, state in self.select_list:
+        #     o.hide_select = state
+
         bpy.ops.ed.undo_push(message='Back To Grease Pencil')
     
     def cancel(self, context):
@@ -367,11 +385,20 @@ class GPOP_OT_onion_peel_tranform(bpy.types.Operator):
 
     def back_to_object(self, context):
         mat = self.source.matrix_world.inverted() @ self.peel.matrix_world
-        self.peel['outapeg'] = mat # str(list(mat))
+        self.peel['outapeg'] = [v[:] for v in mat] # mat # str(list(mat))
+        print('mat: ', mat)
         self.exit(context)
 
     def modal(self, context, event):
         context.area.header_text_set(f'Pick onion peel - use G:move / R:rotate / S:scale / X,M:mirror')
+
+        # if context.view_layer.objects.active != self.peel:
+        #     tmp = context.view_layer.objects.active
+        #     context.view_layer.objects.active = self.peel
+        #     self.peel.select_set(True)
+        #     tmp.select_set(False)
+
+
         # lock frame
         if context.scene.frame_current != self.init_frame:
             context.scene.frame_current = self.init_frame

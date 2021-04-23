@@ -2,7 +2,7 @@ bl_info = {
     "name": "GP Onion Peel",
     "description": "Custom Onion skinning using refreshed linked GP duplications",
     "author": "Samuel Bernou",
-    "version": (0, 6, 3),
+    "version": (0, 6, 4),
     "blender": (2, 92, 0),
     "location": "View3D",
     "warning": "Stable beta",
@@ -52,14 +52,14 @@ def delete_onion(dummy):
 
 @persistent
 def restore_onion(dummy):
-    on = getattr(bpy.context.view_layer, 'onion_was_active')
+    on = getattr(bpy.context.view_layer, 'onion_was_active', None)
     if not on:
         return
     else:
         # launch a refresh
         onion.update_onion(dummy, bpy.context)
     
-    transfo_list = getattr(bpy.context.view_layer, 'onion_custom_transform')
+    transfo_list = getattr(bpy.context.view_layer, 'onion_custom_transform', None)
     if not transfo_list:
         return
     for name, outapeg in transfo_list:
