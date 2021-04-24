@@ -386,17 +386,17 @@ class GPOP_OT_onion_peel_tranform(bpy.types.Operator):
     def back_to_object(self, context):
         mat = self.source.matrix_world.inverted() @ self.peel.matrix_world
         self.peel['outapeg'] = [v[:] for v in mat] # mat # str(list(mat))
-        print('mat: ', mat)
         self.exit(context)
 
     def modal(self, context, event):
         context.area.header_text_set(f'Pick onion peel - use G:move / R:rotate / S:scale / X,M:mirror')
 
-        # if context.view_layer.objects.active != self.peel:
-        #     tmp = context.view_layer.objects.active
-        #     context.view_layer.objects.active = self.peel
-        #     self.peel.select_set(True)
-        #     tmp.select_set(False)
+        if context.view_layer.objects.active != self.peel:
+            self.report({'WARNING'}, "Only selected peel must be moved before pressing ENTER")
+            tmp = context.view_layer.objects.active
+            context.view_layer.objects.active = self.peel
+            self.peel.select_set(True)
+            tmp.select_set(False)
 
 
         # lock frame

@@ -45,6 +45,7 @@ Bonus:
 0.6.5
 
 - fix: crash on edit > scrub > undo. assigning an empty gp data and deleting old ones early in the update seem to prevent unreferenced pointer.
+- code: removed unused file
 
 0.6.4
 
