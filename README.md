@@ -42,6 +42,10 @@ Bonus:
 
 <!-- - ux: prevent custom transform if onion peel is disabled -->
 
+0.6.5
+
+- fix: crash on edit > scrub > undo. assigning an empty gp data and deleting old ones early in the update seem to prevent unreferenced pointer.
+
 0.6.4
 
 - fix: errors with on save transfo save

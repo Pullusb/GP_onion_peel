@@ -51,6 +51,10 @@ def clear_peels(full_clear=False):
     op_col = bpy.data.collections.get('.onion_peels')
     if op_col:
         bpy.data.collections.remove(op_col)
+    
+    dummy = bpy.data.grease_pencils.get('.dummy')
+    if not dummy:
+        dummy = bpy.data.grease_pencils.remove('.dummy')
 
 def clear_current_peel(ob):
     name = ob.name
@@ -223,7 +227,7 @@ def update_onion(self, context):
     # orignal Matrix ?
     # offseted_mat = get_new_matrix_with_offset(context, ob)
 
-    ## deleting recreating seem to resolve the bug : edit stroke > change frame > ctrl-Z > Crash
+    ## Full delete recrete of object seem to resolve the crash : edit stroke > change frame > ctrl-Z > Crash
     
     clean_peels()
     # clear_current_peel(ob)
@@ -231,8 +235,23 @@ def update_onion(self, context):
     # generate_onion_peels(bpy.context)
     op_col, peel_col = create_peel_col(bpy.context)
 
+    ## createa/assign a dummy (try resolve crash edit stroke > change frame > using ctrl-Z)
+    dummy = bpy.data.grease_pencils.get('.dummy')
+    if not dummy:
+        dummy = bpy.data.grease_pencils.new('.dummy')
+    for o in peel_col.all_objects:
+        old = o.data
+        o.data = dummy # no need to delete old data, "garbage collected" at update end
+        bpy.data.grease_pencils.remove(old)
+
+    # clear the data
     # for o in peel_col.all_objects:
-        # o.data.materials.clear()
+    #     for l in reversed(o.data.layers):
+    #         o.data.layers.remove(l)
+        #-# try poping all materials
+        # for _ in range(len(o.data.materials)):
+        #     o.data.materials.pop()
+
 
     op_col.hide_viewport = False
     # Handle display/
@@ -289,8 +308,12 @@ def update_onion(self, context):
         peel = op_col.all_objects.get(peel_name)
 
         data = bpy.data.grease_pencils.new(peel_name)#f'{peel_name} {random.randint(0,50000)}')
-        for m in ob.data.materials: # get same material stack
+        for i, m in enumerate(ob.data.materials): # get same material stack
             data.materials.append(m)
+            # data.materials.append(None) # cereate empty slots
+            # peel.data.materials.append(None)
+            # peel.material_slots[i].link = 'OBJECT' # default is DATA
+            # peel.material_slots[i].material = m
 
         if not peel:
             peel = bpy.data.objects.new(peel_name, data)
@@ -298,6 +321,7 @@ def update_onion(self, context):
             peel.use_grease_pencil_lights = False
             peel_col.objects.link(peel)
         else:
+
             #-# try storing outapeg and kill-recreate
             # outapeg = peel.get('outapeg')
             # bpy.data.objects.remove(peel)
@@ -311,6 +335,7 @@ def update_onion(self, context):
 
             #-# previously only this in else:
             peel.data = data
+
 
         peel.show_in_front = ob.show_in_front
         peel['index'] = num
