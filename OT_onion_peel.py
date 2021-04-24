@@ -138,7 +138,7 @@ class GPOP_OT_onion_peel_pyramid_fade(bpy.types.Operator):
 
         return {"FINISHED"}
 
-### modal lock attempt
+
 class GPOP_OT_onion_peel_tranform(bpy.types.Operator):
     bl_idname = "gp.onion_peel_tranform"
     bl_label = "Peel Custom Transform"
@@ -248,7 +248,7 @@ class GPOP_OT_onion_peel_tranform(bpy.types.Operator):
             context.scene.frame_current = self.init_frame
 
         # lock everything except G R S clic
-        if event.type in {'G', 'R', 'S', 'LEFTMOUSE', 'RIGHTMOUSE', 'MIDDLEMOUSE'}:
+        if event.type in {'G', 'R', 'S', 'LEFTMOUSE', 'RIGHTMOUSE', 'MIDDLEMOUSE', 'WHEELDOWNMOUSE', 'WHEELUPMOUSE'}:
             return {'PASS_THROUGH'}
 
         if event.type in {'X', 'M'} and event.value == 'PRESS':

@@ -40,11 +40,12 @@ Bonus:
 
 ## Changelog:
 
-<!-- - ux: prevent custom transform if onion peel is disabled -->
 
 0.6.5
 
 - fix: crash on edit > scrub > undo. assigning an empty gp data and deleting old ones early in the update seem to prevent unreferenced pointer.
+- ux: prevent custom transform if onion peel is disabled
+- ux: authorize mouse scroll in custom transform
 - code: cleaning and removed unused file
 
 0.6.4
