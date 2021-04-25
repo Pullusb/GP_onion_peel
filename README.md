@@ -41,6 +41,12 @@ Bonus:
 ## Changelog:
 
 
+0.6.6
+
+- feat-wip: peel editing set origin to geometry
+    - easier rotation and scale
+    - break the re-edit process, need a fix
+
 0.6.5
 
 - fix: crash on edit > scrub > undo. assigning an empty gp data and deleting old ones early in the update seem to prevent unreferenced pointer.

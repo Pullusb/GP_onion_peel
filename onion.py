@@ -399,8 +399,9 @@ def update_onion(self, context):
                 context.scene.frame_set(mark)
             mat, scale = get_new_matrix_with_offset(context, ob, offset=count)
             peel.matrix_world = mat
+            peel['scale_back'] = scale - peel.scale # save offset to counter it for outapeg pos
             peel.scale = scale
-            # peel['depth_offset'] = count # save offset to counter it for outapeg pos
+            peel['depth_offset'] = count # save offset to counter it for outapeg pos
 
     # get back to original current frame
     if settings.world_space:

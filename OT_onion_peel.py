@@ -1,6 +1,7 @@
 import bpy
 from . import onion
 from math import pi
+import numpy as np
 from mathutils import Matrix, Vector
 
 class GPOP_OT_onion_skin_delete(bpy.types.Operator):
@@ -178,7 +179,14 @@ class GPOP_OT_onion_peel_tranform(bpy.types.Operator):
             self.report({'WARNING'}, f'This peel is empty (probably out keyframe of range)')
             return {"CANCELLED"}
 
-    
+        ## case where there is already a transformation
+        # outaprev = peel.get('outapeg')
+        # if outaprev:
+        #     outaprev = Matrix(outaprev)
+        #     offset = peel.matrix_world.translation - ob.matrix_world.translation 
+        #     peel.matrix_world = outaprev.inverted() @ peel.matrix_world
+        #     peel.matrix_world.translation += offset
+
         self.gp_last_mode = context.mode
         self.org_matrix = peel.matrix_world.copy()
         self.init_frame = context.scene.frame_current
@@ -200,7 +208,28 @@ class GPOP_OT_onion_peel_tranform(bpy.types.Operator):
         # for o in context.scene.objects:
         #     if not peelcol in o.users_collection:
         #         o.hide_select = True
-
+        
+        ## ops origin to geometry (faster)
+        peel.location = peel.location
+        bpy.ops.object.origin_set(type='ORIGIN_GEOMETRY', center='MEDIAN') # BOUNDS
+        
+        ## manual origin to geometry
+        # plist = []
+        # for l in peel.data.layers:
+        #     ## Bounds
+        #     # bounds_centers = [(s.bound_box_min + s.bound_box_max)/2 for s in l.active_frame.strokes]
+        #     for s in l.active_frame.strokes:
+        #         ## Geometry
+        #         plist += [p for p in s.points]
+        # center = np.average([p.co for p in plist], axis=0)
+        # to_geo = (peel.matrix_world @ Vector(center)) - peel.matrix_world.translation
+        # peel.matrix_world.translation += to_geo
+        # for p in plist:
+        #     p.co -= to_geo
+        
+        ## store new starting point
+        self.geo_org_matrix = peel.matrix_world.copy()
+        
         # launching ops dont work
         # bpy.ops.transform.translate() 
         context.window_manager.modal_handler_add(self)
@@ -225,10 +254,53 @@ class GPOP_OT_onion_peel_tranform(bpy.types.Operator):
     
     def cancel(self, context):
         self.peel.matrix_world = self.org_matrix
+        context.scene.frame_current = context.scene.frame_current
         self.exit(context)
 
     def back_to_object(self, context):
-        mat = self.source.matrix_world.inverted() @ self.peel.matrix_world
+        #--# Basic matrix
+        # mat = self.source.matrix_world.inverted() @ self.peel.matrix_world
+
+        #--# with origin offset geo
+        # user translation
+        translate = self.peel.matrix_world.translation - self.geo_org_matrix.translation
+
+        # apply translation to object
+        self.org_matrix.translation = self.org_matrix.translation + translate
+
+        # get quaternion rotation (A-B differential rotation between)
+        Aquat = self.geo_org_matrix.to_quaternion()
+        Bquat = self.peel.matrix_world.to_quaternion()
+        rot_diff = Aquat.rotation_difference(Bquat)
+        # convert rot_diff to a matrix
+        rot_mat = rot_diff.to_matrix().to_4x4()
+
+        # create a scale diff matrix (note : cancel scale from depth)
+        scale_offset = self.peel.matrix_world.to_scale() - self.source.matrix_world.to_scale() - Vector(self.peel['scale_back'])
+        # print("Vector(self.peel['scale_back']): ", Vector(self.peel['scale_back']))
+        # print('scale_offset: ', scale_offset)
+        scale_diff = self.org_matrix.to_scale() + scale_offset
+        scale_mat = Matrix.Scale(scale_diff[0],4,(1,0,0)) @ Matrix.Scale(scale_diff[1],4,(0,1,0)) @ Matrix.Scale(scale_diff[2],4,(0,0,1))
+
+        
+        ## 1. substract matrix
+        self.org_matrix = self.peel.matrix_world.inverted() @ self.org_matrix
+
+        ## 2. apply rotation and scale
+        
+        ## element by element
+        # self.org_matrix = scale_mat @ self.org_matrix
+        # self.org_matrix = rot_mat @ self.org_matrix
+
+        ## or once
+        mat_rot_scale = Matrix.Translation(Vector((0,0,0))) @ rot_mat @ scale_mat
+        self.org_matrix = mat_rot_scale @ self.org_matrix
+
+        ## 3. re-apply target matrix
+        mat = self.peel.matrix_world @ self.org_matrix
+        
+
+        mat = self.source.matrix_world.inverted() @ mat # self.peel.matrix_world
         self.peel['outapeg'] = [v[:] for v in mat] # mat # str(list(mat))
         self.exit(context)
 
