@@ -53,8 +53,8 @@ def clear_peels(full_clear=False):
         bpy.data.collections.remove(op_col)
     
     dummy = bpy.data.grease_pencils.get('.dummy')
-    if not dummy:
-        dummy = bpy.data.grease_pencils.remove('.dummy')
+    if dummy:
+        bpy.data.grease_pencils.remove(dummy)
 
 def clear_current_peel(ob):
     name = ob.name
