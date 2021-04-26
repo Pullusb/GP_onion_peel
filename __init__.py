@@ -42,6 +42,7 @@ def delete_onion(dummy):
         outapeg = o.get('outapeg')
         if not outapeg:
             continue
+        outapeg = [v.to_list() for v in outapeg]
         transfo_list.append([o.name, outapeg])
     if transfo_list:
         bpy.types.ViewLayer.onion_custom_transform = transfo_list
