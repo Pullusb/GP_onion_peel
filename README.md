@@ -41,6 +41,10 @@ Bonus:
 ## Changelog:
 
 
+0.6.7
+
+- fixes
+
 0.6.6
 
 - feat-wip: peel editing set origin to geometry

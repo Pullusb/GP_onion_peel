@@ -31,6 +31,7 @@ def clear_peels(full_clear=False):
     '''Clear all onion peels collection and object
     :full_clear: Clear .peels even if outside of onion peels collection
     '''
+    
     if full_clear:
         obj_pool = bpy.data.objects
         col_pool = bpy.data.collections
@@ -45,7 +46,7 @@ def clear_peels(full_clear=False):
         if o.name.startswith('.peel_'):
             bpy.data.objects.remove(o)
     for c in col_pool:
-        if c.name.startswith('.peel_'):
+        if c and c.name.startswith('.peel_'):
             bpy.data.collections.remove(c)
 
     op_col = bpy.data.collections.get('.onion_peels')
