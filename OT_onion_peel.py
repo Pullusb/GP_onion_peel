@@ -165,12 +165,13 @@ class GPOP_OT_onion_peel_tranform(bpy.types.Operator):
         for l in ob.data.layers:
             for s in l.active_frame.strokes:
                 coords = np.zeros(len(s.points)*3)
-
                 s.points.foreach_get('co', coords)
                 coords = coords.reshape((len(s.points), 3))
                 coords -= bbox_center
                 s.points.foreach_set('co', coords.flatten())
-                s.points.update()
+                s.points.add(1)
+                s.points.pop()
+                # s.points.update() # not working
 
     def invoke(self, context, event):
         if not context.scene.gp_ons_setting.activated:
@@ -206,8 +207,12 @@ class GPOP_OT_onion_peel_tranform(bpy.types.Operator):
         #     peel.matrix_world = outaprev.inverted() @ peel.matrix_world
         #     peel.matrix_world.translation += offset
 
-        self.gp_last_mode = context.mode
+        self.peel = peel
         self.org_matrix = peel.matrix_world.copy()
+
+        self.gp_last_mode = context.mode
+        self.peel.matrix_world = Matrix(self.peel['mat'])
+
         self.init_frame = context.scene.frame_current
         bpy.ops.object.mode_set(mode='OBJECT')
         # make it selectable and set as active
@@ -216,7 +221,6 @@ class GPOP_OT_onion_peel_tranform(bpy.types.Operator):
         context.view_layer.objects.active = peel
         peel.select_set(True)
 
-        self.peel = peel
 
         self.source = ob
         
@@ -228,14 +232,18 @@ class GPOP_OT_onion_peel_tranform(bpy.types.Operator):
         #     if not peelcol in o.users_collection:
         #         o.hide_select = True
         
-        ## ops origin to geometry (faster)
+        origin = self.get_bbox_center(peel, world=False)
+        context.scene.cursor.location = origin
+        self.geometry_to_origin(peel, world=False)
+        # peel.matrix_world.translation += origin @ peel.matrix_world.inverted()
 
-        # origin = self.get_bbox_center(peel, world=False)
-        # self.geometry_to_origin(peel)
-        # peel.matrix_world.translation += origin
+        T = Matrix.Translation(origin)
+        # print(T)
+        peel.matrix_world = peel.matrix_world @ T
+
 
         # ## store new starting point
-        # self.geo_org_matrix = peel.matrix_world.copy()
+        self.geo_org_matrix = peel.matrix_world.copy()
         # self.geo_org_vec = origin
         
         # launching ops dont work
@@ -308,8 +316,11 @@ class GPOP_OT_onion_peel_tranform(bpy.types.Operator):
         # ## 3. re-apply target matrix
         # mat = self.peel.matrix_world @ self.org_matrix
         
+        source_mat = Matrix(self.peel['mat'])
+
         ## MEGA apply
         # mat = self.peel.matrix_world @ (self.geo_org_matrix.inverted() @ self.org_matrix)
+        mat = self.peel.matrix_world @ (self.geo_org_matrix.inverted() @ source_mat)
 
         # mat = self.source.matrix_world.inverted() @ mat # self.peel.matrix_world
         self.peel['outapeg'] = mat.copy()# [v[:] for v in mat] # mat # str(list(mat))
@@ -355,7 +366,7 @@ class GPOP_OT_onion_peel_tranform(bpy.types.Operator):
             return {"CANCELLED"}
 
         if event.type in {'RET'} and event.value == 'PRESS':
-            context.scene.frame_current = self.init_frame
+            # context.scene.frame_current = self.init_frame
             self.back_to_object(context)
             return {"FINISHED"}
 

@@ -157,17 +157,17 @@ def clean_mods(gpob):
         if m.layer not in layer_list:
             pgm.remove(m)
 
-def get_new_matrix_with_offset(context, ob, offset=0.0001):
+def get_new_matrix_with_offset(matrix, offset=0.0001):
     """return a copy of the matrix with applied offset and"""
     # offset from camera if any 
     # maybe add a modifier a to reduce stroke size very slightly (overkill...) # 0.0001
-    cam = context.scene.camera
+    cam = bpy.context.scene.camera
     if not cam:
         # TODO check viewport view if in viewport if no cam
         return
     
     cam_loc = cam.matrix_world.translation
-    mat = ob.matrix_world.copy()
+    mat = matrix.copy()
     scale = mat.to_scale()
 
     if cam.data.type == 'ORTHO':
@@ -181,7 +181,15 @@ def get_new_matrix_with_offset(context, ob, offset=0.0001):
         # scale multiplied by lenth diff factor (recalculate length with new location)
         scale = scale * ((mat.translation - cam_loc).length / v.length)
 
-    return mat, scale
+        # recreate a neutral mat scale
+        mat_scale_x = Matrix.Scale(scale[0], 4,(1,0,0))
+        mat_scale_y = Matrix.Scale(scale[1], 4,(0,1,0))
+        mat_scale_z = Matrix.Scale(scale[2], 4,(0,0,1))
+        mat_scale = mat_scale_x @ mat_scale_y @ mat_scale_z
+        mat = mat @ mat_scale
+
+
+    return mat
 
 
 def set_layer_opacity_by_mod(mods, layer_name, value):
@@ -226,7 +234,6 @@ def update_onion(self, context):
     scene.gp_ons_setting.activated = False #Mtx avoid infinite recursion
     
     # orignal Matrix ?
-    # offseted_mat = get_new_matrix_with_offset(context, ob)
 
     ## Full delete recrete of object seem to resolve the crash : edit stroke > change frame > ctrl-Z > Crash
     
@@ -318,7 +325,8 @@ def update_onion(self, context):
 
         if not peel:
             peel = bpy.data.objects.new(peel_name, data)
-            peel.hide_select = True
+            peel.show_bounds = True # <<< DEBUG
+            peel.hide_select = False # <<< DEBUG
             peel.use_grease_pencil_lights = False
             peel_col.objects.link(peel)
         else:
@@ -387,22 +395,22 @@ def update_onion(self, context):
         peel['frame'] = mark # can be None
 
         ## assigning world matrix:
+        outapeg_mat = Matrix()
         if peel.get('outapeg'):
-            ## DIRECT MATRIX assignation
-            # peel.matrix_world = eval(f"Matrix({peel['outapeg']})")
-            ## DIFF MATRIX at time of modification
-            peel.matrix_world = ob.matrix_world @ Matrix(peel['outapeg'])# eval(f"Matrix({peel['outapeg']})")
-        
-        else:
-            count += depth_offset # settings.depth_offset
-            # if not settings.world_space or not mark: (apply without settting frame current)
-            if settings.world_space and mark: 
-                context.scene.frame_set(mark)
-            mat, scale = get_new_matrix_with_offset(context, ob, offset=count)
-            peel.matrix_world = mat
-            peel['scale_back'] = scale - peel.scale # save offset to counter it for outapeg pos
-            peel.scale = scale
-            peel['depth_offset'] = count # save offset to counter it for outapeg pos
+            outapeg_mat = Matrix(peel['outapeg'])
+
+        if settings.world_space and mark: 
+            context.scene.frame_set(mark)
+
+        ## DIRECT MATRIX assignation
+        # peel.matrix_world = eval(f"Matrix({peel['outapeg']})")
+        ## DIFF MATRIX at time of modification
+        mat = ob.matrix_world @ outapeg_mat# eval(f"Matrix({peel['outapeg']})")
+        peel['mat'] = mat
+        count += depth_offset # settings.depth_offset
+        mat = get_new_matrix_with_offset(mat, offset=count)
+        peel.matrix_world = mat
+        # peel.matrix_world = mat
 
     # get back to original current frame
     if settings.world_space:
