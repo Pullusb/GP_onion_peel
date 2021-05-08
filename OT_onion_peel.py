@@ -224,7 +224,7 @@ class GPOP_OT_onion_peel_tranform(bpy.types.Operator):
         context.view_layer.objects.active = peel
         peel.select_set(True)
 
-        self.source = ob
+        self.main_obj = ob
         
         ## Handle selectability (store and disable all objects selection)
         # peelcol = peel.users_collection[0]
@@ -253,8 +253,8 @@ class GPOP_OT_onion_peel_tranform(bpy.types.Operator):
 
     def exit(self, context):
         self.peel.hide_select = True
-        self.source.select_set(True)
-        context.view_layer.objects.active = self.source
+        self.main_obj.select_set(True)
+        context.view_layer.objects.active = self.main_obj
         self.peel.select_set(False)
         # self.peel.location = self.peel.location
         # restore mode
@@ -274,67 +274,28 @@ class GPOP_OT_onion_peel_tranform(bpy.types.Operator):
         self.exit(context)
 
     def back_to_object(self, context):
-        #--# Basic matrix
-        mat = self.source.matrix_world.inverted() @ self.peel.matrix_world
 
-        #--# with origin offset geo
-        # # user translation
-        # translate = self.peel.matrix_world.translation - self.geo_org_matrix.translation
-
-        # # # apply translation to object
-        # self.org_matrix.translation = self.org_matrix.translation + translate
-        # # mat = self.org_matrix
-
-        # # get quaternion rotation (A-B differential rotation between)
-        # Aquat = self.geo_org_matrix.to_quaternion()
-        # Bquat = self.peel.matrix_world.to_quaternion()
-        # rot_diff = Aquat.rotation_difference(Bquat)
-        # # convert rot_diff to a matrix
-        # rot_mat = rot_diff.to_matrix().to_4x4()
-
-        # # create a scale diff matrix (note : cancel scale from depth)
-        # scale_offset = self.peel.matrix_world.to_scale() - self.source.matrix_world.to_scale() - Vector(self.peel['scale_back'])
-        # # print("Vector(self.peel['scale_back']): ", Vector(self.peel['scale_back']))
-        # # print('scale_offset: ', scale_offset)
-        # scale_diff = self.org_matrix.to_scale() + scale_offset
-        # scale_mat = Matrix.Scale(scale_diff[0],4,(1,0,0)) @ Matrix.Scale(scale_diff[1],4,(0,1,0)) @ Matrix.Scale(scale_diff[2],4,(0,0,1))
-
-        
-        # ## 1. substract matrix
-        # self.org_matrix = self.peel.matrix_world.inverted() @ self.org_matrix
-
-        # ## 2. apply rotation and scale
-        
-        # ## element by element
-        # # self.org_matrix = scale_mat @ self.org_matrix
-        # # self.org_matrix = rot_mat @ self.org_matrix
-
-        # ## or once
-        # mat_rot_scale = Matrix.Translation(Vector((0,0,0))) @ rot_mat @ scale_mat
-        # self.org_matrix = mat_rot_scale @ self.org_matrix
-
-        # ## 3. re-apply target matrix
-        # mat = self.peel.matrix_world @ self.org_matrix
-        
         source_mat = Matrix(self.peel['mat'])
 
+        ## debug
         # print(f'\
-        # peel: {self.peel.matrix_world.translation}\n\
-        # geo_org_matrix: {self.geo_org_matrix.translation}\n\
-        # source_mat: {source_mat.translation}\n\
+        # peel   : {self.peel.matrix_world.translation}\n\
+        # geo_org: {self.geo_org_matrix.translation}\n\
+        # src_mat: {source_mat.translation}\n\
         # ')
         
-        print(f'Scales:\n\
-        peel: {self.peel.matrix_world.to_scale()}\n\
-        geo_org_matrix: {self.geo_org_matrix.to_scale()}\n\
-        source_mat: {source_mat.to_scale()}\n\
-        ')
+        # print(f'Scales:\n\
+        # peel   : {self.peel.matrix_world.to_scale()}\n\
+        # geo_org: {self.geo_org_matrix.to_scale()}\n\
+        # src_mat: {source_mat.to_scale()}\n\
+        # ')
 
-        ## MEGA apply
-        mat = self.peel.matrix_world @ (self.geo_org_matrix.inverted() @ self.org_matrix)
-        # mat = self.peel.matrix_world @ (self.geo_org_matrix.inverted() @ source_mat)
+        ## Get offset matrix
+        mat = self.peel.matrix_world @ (self.geo_org_matrix.inverted() @ source_mat)
+        
+        ## Apply offset from original object  (cancel it, will be applyed at exit refreshed)
+        mat = self.main_obj.matrix_world.inverted() @ mat
 
-        # mat = self.source.matrix_world.inverted() @ mat # self.peel.matrix_world
         self.peel['outapeg'] = mat.copy()# [v[:] for v in mat] # mat # str(list(mat))
         self.exit(context)
 

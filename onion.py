@@ -185,20 +185,21 @@ def get_new_matrix_with_offset(matrix, offset=0.0001):
         mat.translation += v * offset
     else:
         v = mat.translation - cam_loc
-        mat.translation += v.normalized() * offset
+        new_loc = mat.translation + (v.normalized() * offset)
+        # mat.translation = new_loc # no need to apply here if matrix is recomposed after
+        
         # scale multiplied by lenth diff factor (recalculate length with new location)
-        scale = scale * ((mat.translation - cam_loc).length / v.length)
+        scale = scale * ((new_loc - cam_loc).length / v.length)
 
         mat_scale = scale_matrix_from_vector(scale)
         # mat = mat @ mat_scale # << maybe problematic, org scale is not neutral
 
         # decompose -> recompose
-        loc, rot, _ = mat.decompose()
-        mat_loc = Matrix.Translation(loc)
+        _loc, rot, _sca = mat.decompose()
+        mat_loc = Matrix.Translation(new_loc)
         mat_rot = rot.to_matrix().to_4x4()
 
         mat = mat_loc @ mat_rot @ mat_scale
-
 
     return mat
 
@@ -336,8 +337,8 @@ def update_onion(self, context):
 
         if not peel:
             peel = bpy.data.objects.new(peel_name, data)
-            peel.show_bounds = True # <<< DEBUG
-            peel.hide_select = False # <<< DEBUG
+            # peel.show_bounds = True # <<< DEBUG
+            # peel.hide_select = False # <<< DEBUG
             peel.use_grease_pencil_lights = False
             peel_col.objects.link(peel)
         else:
