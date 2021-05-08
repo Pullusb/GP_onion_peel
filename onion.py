@@ -157,6 +157,14 @@ def clean_mods(gpob):
         if m.layer not in layer_list:
             pgm.remove(m)
 
+def scale_matrix_from_vector(scale):
+    # recreate a neutral mat scale
+    matscale_x = Matrix.Scale(scale[0], 4,(1,0,0))
+    matscale_y = Matrix.Scale(scale[1], 4,(0,1,0))
+    matscale_z = Matrix.Scale(scale[2], 4,(0,0,1))
+    matscale = matscale_x @ matscale_y @ matscale_z
+    return matscale
+
 def get_new_matrix_with_offset(matrix, offset=0.0001):
     """return a copy of the matrix with applied offset and"""
     # offset from camera if any 
@@ -181,12 +189,15 @@ def get_new_matrix_with_offset(matrix, offset=0.0001):
         # scale multiplied by lenth diff factor (recalculate length with new location)
         scale = scale * ((mat.translation - cam_loc).length / v.length)
 
-        # recreate a neutral mat scale
-        mat_scale_x = Matrix.Scale(scale[0], 4,(1,0,0))
-        mat_scale_y = Matrix.Scale(scale[1], 4,(0,1,0))
-        mat_scale_z = Matrix.Scale(scale[2], 4,(0,0,1))
-        mat_scale = mat_scale_x @ mat_scale_y @ mat_scale_z
-        mat = mat @ mat_scale
+        mat_scale = scale_matrix_from_vector(scale)
+        # mat = mat @ mat_scale # << maybe problematic, org scale is not neutral
+
+        # decompose -> recompose
+        loc, rot, _ = mat.decompose()
+        mat_loc = Matrix.Translation(loc)
+        mat_rot = rot.to_matrix().to_4x4()
+
+        mat = mat_loc @ mat_rot @ mat_scale
 
 
     return mat

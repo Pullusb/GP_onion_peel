@@ -211,39 +211,38 @@ class GPOP_OT_onion_peel_tranform(bpy.types.Operator):
         self.org_matrix = peel.matrix_world.copy()
 
         self.gp_last_mode = context.mode
+        
+        # Reset the object matrix without depth offset
         self.peel.matrix_world = Matrix(self.peel['mat'])
 
         self.init_frame = context.scene.frame_current
-        bpy.ops.object.mode_set(mode='OBJECT')
+        
         # make it selectable and set as active
+        bpy.ops.object.mode_set(mode='OBJECT')
         peel.hide_select = False
         ob.select_set(False)
         context.view_layer.objects.active = peel
         peel.select_set(True)
 
-
         self.source = ob
         
-        
-        # Handle selectability (store and disable all objects selection)
+        ## Handle selectability (store and disable all objects selection)
         # peelcol = peel.users_collection[0]
         # self.select_list = [(o, o.hide_select) for o in context.scene.objects]
         # for o in context.scene.objects:
         #     if not peelcol in o.users_collection:
         #         o.hide_select = True
         
-        origin = self.get_bbox_center(peel, world=False)
+        ## Set the origin to center of object (new starting point)
+        origin = self.get_bbox_center(self.peel, world=False)
         context.scene.cursor.location = origin
-        self.geometry_to_origin(peel, world=False)
+        self.geometry_to_origin(self.peel, world=False)
         # peel.matrix_world.translation += origin @ peel.matrix_world.inverted()
-
         T = Matrix.Translation(origin)
-        # print(T)
-        peel.matrix_world = peel.matrix_world @ T
-
+        self.peel.matrix_world = self.peel.matrix_world @ T
 
         # ## store new starting point
-        self.geo_org_matrix = peel.matrix_world.copy()
+        self.geo_org_matrix = self.peel.matrix_world.copy()
         # self.geo_org_vec = origin
         
         # launching ops dont work
@@ -266,11 +265,12 @@ class GPOP_OT_onion_peel_tranform(bpy.types.Operator):
         # for o, state in self.select_list:
         #     o.hide_select = state
 
+        context.scene.frame_current = self.init_frame
         bpy.ops.ed.undo_push(message='Back To Grease Pencil')
     
     def cancel(self, context):
         self.peel.matrix_world = self.org_matrix
-        context.scene.frame_current = context.scene.frame_current
+        # context.scene.frame_current = self.init_frame
         self.exit(context)
 
     def back_to_object(self, context):
@@ -318,9 +318,21 @@ class GPOP_OT_onion_peel_tranform(bpy.types.Operator):
         
         source_mat = Matrix(self.peel['mat'])
 
+        # print(f'\
+        # peel: {self.peel.matrix_world.translation}\n\
+        # geo_org_matrix: {self.geo_org_matrix.translation}\n\
+        # source_mat: {source_mat.translation}\n\
+        # ')
+        
+        print(f'Scales:\n\
+        peel: {self.peel.matrix_world.to_scale()}\n\
+        geo_org_matrix: {self.geo_org_matrix.to_scale()}\n\
+        source_mat: {source_mat.to_scale()}\n\
+        ')
+
         ## MEGA apply
-        # mat = self.peel.matrix_world @ (self.geo_org_matrix.inverted() @ self.org_matrix)
-        mat = self.peel.matrix_world @ (self.geo_org_matrix.inverted() @ source_mat)
+        mat = self.peel.matrix_world @ (self.geo_org_matrix.inverted() @ self.org_matrix)
+        # mat = self.peel.matrix_world @ (self.geo_org_matrix.inverted() @ source_mat)
 
         # mat = self.source.matrix_world.inverted() @ mat # self.peel.matrix_world
         self.peel['outapeg'] = mat.copy()# [v[:] for v in mat] # mat # str(list(mat))
