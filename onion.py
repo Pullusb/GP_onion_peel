@@ -92,7 +92,23 @@ def clean_peels():
         if not len(op_col.all_objects):
             bpy.data.collections.remove(op_col)
 
-        
+def clear_custom_transform(all_peel=False):
+    op_col = bpy.data.collections.get('.onion_peels')
+    if not op_col:
+        return
+    if all_peel:
+        pool = [c for c in op_col.children if c.name.startwith('.onion')]
+    else:
+        current_onion = op_col.children.get(f'.onion_{bpy.context.object.name}')
+        if not current_onion:
+            return
+        pool = [current_onion]
+
+    # Clear the outapeg prop
+    for c in pool:
+        for peel in c.all_objects:
+            if peel.get('outapeg'):
+                del peel['outapeg']
 
 def get_keys(ob, evaluate_gp_obj_key=True):
     '''Return sorted keys frame number of GP object'''
@@ -338,7 +354,7 @@ def update_onion(self, context):
         if not peel:
             peel = bpy.data.objects.new(peel_name, data)
             # peel.show_bounds = True # <<< DEBUG
-            # peel.hide_select = False # <<< DEBUG
+            peel.hide_select = True
             peel.use_grease_pencil_lights = False
             peel_col.objects.link(peel)
         else:

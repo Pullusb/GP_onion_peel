@@ -67,6 +67,9 @@ class GPOP_OT_onion_skin_refresh(bpy.types.Operator):
                 self.report({'WARNING'}, 'All layers have onion skin toggled off')
                 return {'CANCELLED'}
             
+            # clear outapeg:
+            onion.clear_custom_transform(all_peel=False)
+            
             # just refresh existing (need to replace create and auto-clean if needed)
             onion.update_onion(self, context)
             context.space_data.overlay.use_gpencil_onion_skin = False
