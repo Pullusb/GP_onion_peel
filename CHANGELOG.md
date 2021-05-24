@@ -1,6 +1,10 @@
 ## Changelog:
 
 
+0.6.9
+
+- fix: prevent edit of a hided peel
+
 0.6.8
 
 - feat: Center pivot when moving out of peg (dev branch merged)

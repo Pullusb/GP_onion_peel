@@ -192,6 +192,10 @@ class GPOP_OT_onion_peel_tranform(bpy.types.Operator):
             self.report({'ERROR'}, f'Could not find this Onion peel, it might no exists yet ! \nTry refreshing first.')
             return {"CANCELLED"}
         
+        if peel.hide_viewport:
+            self.report({'ERROR'}, f"Can't edit hided peel")
+            return {"CANCELLED"}
+        
         # check if no frames
         ok = False
         for l in peel.data.layers:
