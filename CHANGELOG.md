@@ -1,6 +1,11 @@
 ## Changelog:
 
 
+0.7.0
+
+- UI: add draw handler with screen framing and helper text displayed
+- meta: removing stable beta warning
+
 0.6.9
 
 - fix: prevent edit of a hided peel

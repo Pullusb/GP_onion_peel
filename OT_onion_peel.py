@@ -1,8 +1,14 @@
+from .preferences import get_addon_prefs
 import bpy
 from . import onion
 from math import pi
 import numpy as np
 from mathutils import Matrix, Vector
+import gpu
+import bgl
+import blf
+from gpu_extras.batch import batch_for_shader
+
 
 class GPOP_OT_onion_skin_delete(bpy.types.Operator):
     bl_idname = "gp.onion_peel_delete"
@@ -143,6 +149,33 @@ class GPOP_OT_onion_peel_pyramid_fade(bpy.types.Operator):
         return {"FINISHED"}
 
 
+### MODAL WITH FRAW HANDLER
+
+def draw_callback_2d(self, context):
+    if context.area != self._draw_area:
+        return
+
+    # green -> (0.06, 0.4, 0.040, 0.6)
+    # orange -> (0.45, 0.18, 0.03, 1.0)
+    osd_color = (0.06, 0.4, 0.040, 0.75)
+    bgl.glLineWidth(10)
+    self.shader_2d.bind()
+    self.shader_2d.uniform_float("color", osd_color)
+    self.screen_framing.draw(self.shader_2d)
+    
+    # Reset
+    bgl.glLineWidth(1)
+
+    # Display Text
+    if self.use_osd_text:
+        font_id = 0
+        dpi = context.preferences.system.dpi
+        # Display current frame text
+        blf.color(font_id, *osd_color) # unpack color in argument
+        blf.position(font_id, context.region.width/3, 15, 0) # context.region.height-
+        blf.size(font_id, 16, dpi)
+        blf.draw(font_id, f'Peel transform mode : G / R / S / X')
+
 class GPOP_OT_onion_peel_tranform(bpy.types.Operator):
     bl_idname = "gp.onion_peel_tranform"
     bl_label = "Peel Custom Transform"
@@ -195,7 +228,7 @@ class GPOP_OT_onion_peel_tranform(bpy.types.Operator):
         if peel.hide_viewport:
             self.report({'ERROR'}, f"Can't edit hided peel")
             return {"CANCELLED"}
-        
+
         # check if no frames
         ok = False
         for l in peel.data.layers:
@@ -205,6 +238,9 @@ class GPOP_OT_onion_peel_tranform(bpy.types.Operator):
         if not ok:
             self.report({'WARNING'}, f'This peel is empty (probably out keyframe of range)')
             return {"CANCELLED"}
+
+        prefs = get_addon_prefs()
+        self.use_osd_text = prefs.use_osd_text
 
         ## case where there is already a transformation
         # outaprev = peel.get('outapeg')
@@ -254,6 +290,24 @@ class GPOP_OT_onion_peel_tranform(bpy.types.Operator):
         
         # launching ops dont work
         # bpy.ops.transform.translate() 
+
+
+        ## screen color frame
+        r = bpy.context.region
+        w = r.width
+        h = r.height
+
+        self.shader_2d = gpu.shader.from_builtin('2D_UNIFORM_COLOR')
+        self.screen_framing = batch_for_shader(
+        # self.shader_2d, 'LINE_STRIP', {"pos": [(0,0), (0,h), (w,h), (w,0), (0,0)]})
+        self.shader_2d, 'LINE_LOOP', {"pos": [(0,0), (0,h), (w,h), (w,0)]})
+        
+        ## OpenGL handler
+        self._draw_area = context.area
+        args = (self, context)
+        self._handle = bpy.types.SpaceView3D.draw_handler_add(
+            draw_callback_2d, args, "WINDOW", "POST_PIXEL")
+
         context.window_manager.modal_handler_add(self)
         return {'RUNNING_MODAL'}
     
@@ -273,6 +327,7 @@ class GPOP_OT_onion_peel_tranform(bpy.types.Operator):
         #     o.hide_select = state
 
         context.scene.frame_current = self.init_frame
+        bpy.types.SpaceView3D.draw_handler_remove(self._handle, 'WINDOW')
         bpy.ops.ed.undo_push(message='Back To Grease Pencil')
     
     def cancel(self, context):

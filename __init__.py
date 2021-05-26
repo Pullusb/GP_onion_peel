@@ -2,11 +2,11 @@ bl_info = {
     "name": "GP Onion Peel",
     "description": "Custom Onion skinning using refreshed linked GP duplications",
     "author": "Samuel Bernou",
-    "version": (0, 6, 9),
+    "version": (0, 7, 0),
     "blender": (2, 92, 0),
     "location": "View3D",
-    "warning": "Stable beta",
-    "doc_url": "https://github.com/Pullusb/GP_onion_peel",
+    "warning": "",
+    "doc_url": "", # https://github.com/Pullusb/GP_onion_peel
     "category": "Object" }
 
 if 'bpy' in locals():

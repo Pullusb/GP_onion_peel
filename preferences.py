@@ -47,6 +47,9 @@ class GPOP_addon_prefs(bpy.types.AddonPreferences):
         )
 
 
+    use_osd_text : BoolProperty(name='Show help text', default=True,
+    description='Display a help text when using custom transformation')
+
     def draw(self, context):
             layout = self.layout
             # layout.use_property_split = True
@@ -62,6 +65,12 @@ class GPOP_addon_prefs(bpy.types.AddonPreferences):
             row.enabled = self.use_default_color
             row.prop(self, 'default_before_color')
             row.prop(self, 'default_after_color')
+
+            box = layout.box()
+
+            col = box.column()
+            col.label(text='On Screen Display')
+            col.prop(self, 'use_osd_text', text='Show help text on custom transformation')
 
 classes=(
 GPOP_addon_prefs,
