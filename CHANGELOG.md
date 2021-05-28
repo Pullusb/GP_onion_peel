@@ -1,6 +1,10 @@
 ## Changelog:
 
 
+0.7.1
+
+- keymap: added 'B' to valid an onion peel transform
+
 0.7.0
 
 - UI: add draw handler with screen framing and helper text displayed

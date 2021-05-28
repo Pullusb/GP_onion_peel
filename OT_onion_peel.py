@@ -400,7 +400,7 @@ class GPOP_OT_onion_peel_tranform(bpy.types.Operator):
             self.cancel(context)
             return {"CANCELLED"}
 
-        if event.type in {'RET'} and event.value == 'PRESS':
+        if event.type in {'RET', 'B'} and event.value == 'PRESS':
             # context.scene.frame_current = self.init_frame
             self.back_to_object(context)
             return {"FINISHED"}

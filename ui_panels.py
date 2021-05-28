@@ -18,7 +18,7 @@ class GPOP_PT_onion_skinning_ui(bpy.types.Panel):
             layout.label(text='-- Peel object edit --')
             layout.label(text='Transforms onion peel')
             layout.label(text='- Controls -') # modal infos
-            layout.label(text='ENTER : Valid') # modal infos
+            layout.label(text='ENTER / B : Valid') # modal infos
             layout.label(text='ESC : Cancel') # modal infos
             layout.label(text='G/R/S : Transform') # modal infos
             layout.label(text='X : horizontal flip (Shift X : vertical)') # modal infos
