@@ -242,6 +242,9 @@ class GPOP_OT_onion_peel_tranform(bpy.types.Operator):
         prefs = get_addon_prefs()
         self.use_osd_text = prefs.use_osd_text
 
+        self.autokey = context.scene.tool_settings.use_keyframe_insert_auto
+        context.scene.tool_settings.use_keyframe_insert_auto = False
+
         ## case where there is already a transformation
         # outaprev = peel.get('outapeg')
         # if outaprev:
@@ -327,6 +330,7 @@ class GPOP_OT_onion_peel_tranform(bpy.types.Operator):
         #     o.hide_select = state
 
         context.scene.frame_current = self.init_frame
+        context.scene.tool_settings.use_keyframe_insert_auto = self.autokey
         bpy.types.SpaceView3D.draw_handler_remove(self._handle, 'WINDOW')
         bpy.ops.ed.undo_push(message='Back To Grease Pencil')
     

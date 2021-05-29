@@ -1,5 +1,8 @@
 ## Changelog:
 
+0.7.2
+
+- fix: disable autokey during transform that broke peel position
 
 0.7.1
 
