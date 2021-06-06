@@ -1,5 +1,9 @@
 ## Changelog:
 
+0.7.3
+
+- change: re-enable visibility of peel that are out of before/after range
+
 0.7.2
 
 - fix: disable autokey during transform that broke peel position

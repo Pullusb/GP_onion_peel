@@ -288,7 +288,6 @@ def update_onion(self, context):
         # for _ in range(len(o.data.materials)):
         #     o.data.materials.pop()
 
-
     op_col.hide_viewport = False
     # Handle display/
 
@@ -449,6 +448,15 @@ def update_onion(self, context):
         if o not in used:
             bpy.data.objects.remove(o)
             continue
+
+    # reset visibility of peels items that are out of peels range
+    for i, f in enumerate(settings.neg_frames):
+        if i > gprev:
+            f.visibility = True
+    for i, f in enumerate(settings.pos_frames):
+        if i > gnext:
+            f.visibility = True
+    
 
     # Clear unused old peel data
     for gp in bpy.data.grease_pencils[:]:
