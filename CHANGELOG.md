@@ -1,6 +1,6 @@
 ## Changelog:
 
-0.7.3
+0.7.4
 
 - code: add test to trigger on keys
 
