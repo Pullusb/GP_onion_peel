@@ -2,7 +2,7 @@ bl_info = {
     "name": "GP Onion Peel",
     "description": "Custom Onion skinning using refreshed linked GP duplications",
     "author": "Samuel Bernou",
-    "version": (0, 7, 3),
+    "version": (0, 7, 4),
     "blender": (2, 92, 0),
     "location": "View3D",
     "warning": "",
@@ -85,11 +85,14 @@ def register():
     properties.register()
     OT_onion_peel.register()
     ui_panels.register()
-    
     #-# assign default color if needed
     ## CANT DO here - restricted context
 
     bpy.app.handlers.frame_change_post.append(onion.update_onion)
+    
+    ## try trigerring on new key
+    # bpy.types.ViewLayer.gp_len_frame = 0
+    # bpy.app.handlers.depsgraph_update_post.append(onion.trigger_on_key)
 
     bpy.app.handlers.save_pre.append(delete_onion)
     bpy.app.handlers.save_post.append(restore_onion)
@@ -102,6 +105,7 @@ def unregister():
     bpy.app.handlers.save_post.remove(restore_onion)
 
     bpy.app.handlers.frame_change_post.remove(onion.update_onion)
+    # bpy.app.handlers.depsgraph_update_post.remove(onion.trigger_on_key)
 
     ui_panels.unregister()
     OT_onion_peel.unregister()

@@ -2,6 +2,10 @@
 
 0.7.3
 
+- code: add test to trigger on keys
+
+0.7.3
+
 - change: re-enable visibility of peel that are out of before/after range
 
 0.7.2

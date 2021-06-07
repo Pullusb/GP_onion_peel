@@ -556,3 +556,18 @@ def update_peel_xray(self, context):
 #     else:
 #         for o in context.scene.objects:
 #             update_ob_onion(context, o)
+
+
+def trigger_on_key(self, context):
+    ob = bpy.context.object
+    if not ob or ob.type != 'GPENCIL' or ob.name.startswith('.peel'):
+        return
+    if not bpy.context.scene.gp_ons_setting.activated: 
+        return
+    l = ob.data.layers.active
+    if not l:
+        return
+    if not hasattr(bpy.types.ViewLayer, 'gp_len_frame') or len(l.frames) != bpy.context.view_layer.gp_len_frame:
+        print('update from frame len !', bpy.context.view_layer.gp_len_frame)
+        bpy.types.ViewLayer.gp_len_frame = len(l.frames)
+        update_onion(self, context)
