@@ -2,7 +2,7 @@ bl_info = {
     "name": "GP Onion Peel",
     "description": "Custom Onion skinning using refreshed linked GP duplications",
     "author": "Samuel Bernou",
-    "version": (0, 7, 5),
+    "version": (0, 7, 6),
     "blender": (2, 92, 0),
     "location": "View3D",
     "warning": "",
@@ -94,7 +94,7 @@ def register():
     # bpy.types.ViewLayer.gp_len_frame = 0
     # bpy.app.handlers.depsgraph_update_post.append(onion.trigger_on_key)
 
-    bpy.app.handlers.save_pre.append(delete_onion)
+    bpy.app.handlers.save_pre.append(delete_onion)  
     bpy.app.handlers.save_post.append(restore_onion)
     bpy.app.handlers.load_post.append(load_onion)
 

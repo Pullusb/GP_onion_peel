@@ -96,6 +96,10 @@ class GPOP_PGT_settings(bpy.types.PropertyGroup):
     
     o_general: IntProperty(default=50, min=1, max=100, subtype='PERCENTAGE', options={'HIDDEN'}, update=update_opacity)
 
+    frame_prev : IntProperty(
+        name="frame prev", description="previous frame holder",
+        default= -9999)
+
 ### --- REGISTER ---
 
 classes=(

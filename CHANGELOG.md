@@ -1,9 +1,14 @@
 ## Changelog:
 
 
+0.7.6
+
+- fix: prevent peels from reupdating if frame has not changed
+- changes: change method for removing old data (directly at the moment of the new data assignement instead of createing a dummy object)
+
 0.7.5
 
-- copy thickness factor of main object
+- fix: copy thickness factor of main object
 
 0.7.4
 

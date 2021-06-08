@@ -236,12 +236,12 @@ def set_layer_opacity_by_mod(mods, layer_name, value):
 @persistent
 def update_onion(self, context):
     # t0 = time()
+    # print(f'in onion update {time()}, {bpy.context.mode} {bpy.context.scene.frame_current}')
     ob = bpy.context.object
     if not ob or ob.type != 'GPENCIL' or ob.name.startswith('.peel'):
         return
     
     scene = context.scene
-
     #/ Handle display
     op_col = bpy.data.collections.get('.onion_peels')
     if not scene.gp_ons_setting.activated:
@@ -254,6 +254,13 @@ def update_onion(self, context):
             op_col.hide_viewport = True
         # dont do anything and leave
         return
+
+    ### Dirt hack : Frame flag to prevent tirggering multiple times on the same frame
+    if scene.gp_ons_setting.frame_prev == scene.frame_current:
+        return
+    else:
+        scene.gp_ons_setting.frame_prev = scene.frame_current
+
 
     gpl = ob.data.layers
     if not [l for l in gpl if l.use_onion_skinning and not l.hide]: # Skip if no onion layers
@@ -272,13 +279,14 @@ def update_onion(self, context):
     op_col, peel_col = create_peel_col(bpy.context)
 
     ## createa/assign a dummy (try resolve crash edit stroke > change frame > using ctrl-Z)
-    dummy = bpy.data.grease_pencils.get('.dummy')
-    if not dummy:
-        dummy = bpy.data.grease_pencils.new('.dummy')
-    for o in peel_col.all_objects:
-        old = o.data
-        o.data = dummy # no need to delete old data, "garbage collected" at update end
-        bpy.data.grease_pencils.remove(old)
+    # dummy = bpy.data.grease_pencils.get('.dummy')
+    # if not dummy:
+    #     dummy = bpy.data.grease_pencils.new('.dummy')
+    # for o in peel_col.all_objects:
+    #     old = o.data
+    #     o.data = dummy # no need to delete old data, "garbage collected" at update end
+    #     bpy.data.grease_pencils.remove(old)
+
 
     # clear the data
     # for o in peel_col.all_objects:
@@ -309,7 +317,7 @@ def update_onion(self, context):
     used = []
     layers = []
     
-    ## calculate all frame index by layer Once
+    ## calculate all frame index by layer Once      
     for l in gpl:
         if not l.use_onion_skinning or l.hide:
             continue
@@ -357,6 +365,7 @@ def update_onion(self, context):
             peel.hide_select = True
             peel.use_grease_pencil_lights = False
             peel_col.objects.link(peel)
+        
         else:
 
             #-# try storing outapeg and kill-recreate
@@ -370,8 +379,12 @@ def update_onion(self, context):
             # if outapeg:
             #     peel['outapeg'] = outapeg
 
-            #-# previously only this in else:
-            peel.data = data
+            #-# Try prevent crash from missing data
+            old = peel.data # remove old data
+            
+            peel.data = data # previously only this in else
+
+            bpy.data.grease_pencils.remove(old) # remove old data
 
 
         peel.show_in_front = ob.show_in_front
@@ -472,6 +485,7 @@ def update_onion(self, context):
         c.hide_viewport = c is not peel_col
     # print(time() - t0)
     # bpy.ops.ed.undo_push(message=f'Peel update {time()}') # test
+
 
 def update_opacity(self, context):
     settings = context.scene.gp_ons_setting
