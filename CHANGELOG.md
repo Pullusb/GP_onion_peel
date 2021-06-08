@@ -1,5 +1,10 @@
 ## Changelog:
 
+
+0.7.5
+
+- copy thickness factor of main object
+
 0.7.4
 
 - code: add test to trigger on keys

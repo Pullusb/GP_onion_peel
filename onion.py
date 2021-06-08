@@ -343,6 +343,7 @@ def update_onion(self, context):
         peel = op_col.all_objects.get(peel_name)
 
         data = bpy.data.grease_pencils.new(peel_name)#f'{peel_name} {random.randint(0,50000)}')
+        data.pixel_factor = ob.data.pixel_factor
         for i, m in enumerate(ob.data.materials): # get same material stack
             data.materials.append(m)
             # data.materials.append(None) # cereate empty slots
