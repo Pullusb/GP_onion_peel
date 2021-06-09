@@ -1,6 +1,10 @@
 ## Changelog:
 
 
+0.7.7
+
+- revert dummy object methods for object deletion (new methods recreate crash for ctrlZ + edit)
+
 0.7.6
 
 - fix: prevent peels from reupdating if frame has not changed

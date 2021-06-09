@@ -279,13 +279,13 @@ def update_onion(self, context):
     op_col, peel_col = create_peel_col(bpy.context)
 
     ## createa/assign a dummy (try resolve crash edit stroke > change frame > using ctrl-Z)
-    # dummy = bpy.data.grease_pencils.get('.dummy')
-    # if not dummy:
-    #     dummy = bpy.data.grease_pencils.new('.dummy')
-    # for o in peel_col.all_objects:
-    #     old = o.data
-    #     o.data = dummy # no need to delete old data, "garbage collected" at update end
-    #     bpy.data.grease_pencils.remove(old)
+    dummy = bpy.data.grease_pencils.get('.dummy')
+    if not dummy:
+        dummy = bpy.data.grease_pencils.new('.dummy')
+    for o in peel_col.all_objects:
+        old = o.data
+        o.data = dummy # no need to delete old data, "garbage collected" at update end
+        bpy.data.grease_pencils.remove(old)
 
 
     # clear the data
@@ -380,11 +380,11 @@ def update_onion(self, context):
             #     peel['outapeg'] = outapeg
 
             #-# Try prevent crash from missing data
-            old = peel.data # remove old data
+            # old = peel.data # remove old data
             
             peel.data = data # previously only this in else
 
-            bpy.data.grease_pencils.remove(old) # remove old data
+            # bpy.data.grease_pencils.remove(old) # remove old data
 
 
         peel.show_in_front = ob.show_in_front
