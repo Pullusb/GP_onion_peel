@@ -1,6 +1,11 @@
 ## Changelog:
 
 
+0.7.8
+
+- fix: peel not updating on changes
+- ui: how greyed out peel row when hided
+
 0.7.7
 
 - revert dummy object methods for object deletion (new methods recreate crash for ctrlZ + edit)

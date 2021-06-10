@@ -22,7 +22,7 @@ class GPOP_addon_prefs(bpy.types.AddonPreferences):
     bl_idname = __name__.split('.')[0] # or with: os.path.splitext(__name__)[0]
 
     # some_bool_prop to display in the addon pref
-    depth_offset : FloatProperty(name='Depth offset', default=0.028, min=0.001, max=10, precision=3, step=4,
+    depth_offset : FloatProperty(name='Depth offset', default=0.035, min=0.001, max=10, precision=3, step=4,
         description='Offset the onion peels in the depth from active camera\n(increment if peels are overlapping each other)'
         #update=update_onion # no update since it's in prefs...
         )

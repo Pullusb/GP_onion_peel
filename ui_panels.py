@@ -123,6 +123,7 @@ class GPOP_PT_onion_skinning_ui(bpy.types.Panel):
             # CHECKBOX_DEHLT, CHECKBOX_HLT ? # show/hide with checkboxes (if more clear)
 
             # row.label(text=str(i), icon='DOT') # basic dot
+            row.active = fsetting.visibility
             row.label(text=str(i))
             if peel and peel.get('outapeg'):
                 row.operator('gp.reset_peel_transform', text='', icon='X').peel_num = i # RADIOBUT_ON, TRANSFORM_ORIGINS, RADIOBUT_OFF, TRACKER

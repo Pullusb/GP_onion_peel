@@ -65,7 +65,7 @@ class GPOP_OT_onion_skin_refresh(bpy.types.Operator):
             if not [l for l in gpl if l.use_onion_skinning]: # Skip if no onion layers
                 self.report({'WARNING'}, 'All layers have onion skin toggled off')
                 return {'CANCELLED'}
-            onion.update_onion(self, context)
+            onion.force_update_onion(self, context)
         
         else:
             onion.clean_peels() # clean (without deleting)
@@ -77,7 +77,7 @@ class GPOP_OT_onion_skin_refresh(bpy.types.Operator):
             onion.clear_custom_transform(all_peel=False)
             
             # just refresh existing (need to replace create and auto-clean if needed)
-            onion.update_onion(self, context)
+            onion.force_update_onion(self, context)
             context.space_data.overlay.use_gpencil_onion_skin = False
 
 
@@ -239,6 +239,7 @@ class GPOP_OT_onion_peel_tranform(bpy.types.Operator):
             self.report({'WARNING'}, f'This peel is empty (probably out keyframe of range)')
             return {"CANCELLED"}
 
+        context.scene.gp_ons_setting.frame_prev = -9999
         prefs = get_addon_prefs()
         self.use_osd_text = prefs.use_osd_text
 
@@ -332,6 +333,7 @@ class GPOP_OT_onion_peel_tranform(bpy.types.Operator):
         context.scene.frame_current = self.init_frame
         context.scene.tool_settings.use_keyframe_insert_auto = self.autokey
         bpy.types.SpaceView3D.draw_handler_remove(self._handle, 'WINDOW')
+        context.scene.gp_ons_setting.frame_prev = -9999
         bpy.ops.ed.undo_push(message='Back To Grease Pencil')
     
     def cancel(self, context):
@@ -438,7 +440,7 @@ class GPOP_OT_onion_reset_peel_transform(bpy.types.Operator):
 
         del peel['outapeg']
         # since the propery is deleted the reevaluation will reset it
-        onion.update_onion(self, context)
+        onion.force_update_onion(self, context)
         bpy.ops.ed.undo_push(message='Reset Peel transform')
         return {"FINISHED"}
 

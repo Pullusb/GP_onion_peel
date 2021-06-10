@@ -233,6 +233,10 @@ def set_layer_opacity_by_mod(mods, layer_name, value):
 ### MAIN FUNCTION (called on each frame change or when onion rebuild is needed)
 ###
 
+def force_update_onion(self, context):
+    bpy.context.scene.gp_ons_setting.frame_prev = -9999
+    update_onion(self, context)
+
 @persistent
 def update_onion(self, context):
     # t0 = time()

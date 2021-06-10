@@ -1,6 +1,6 @@
 import bpy
 from . import preferences
-from .onion import update_onion, update_opacity, update_peel_color, update_peel_xray#, switch_onion
+from .onion import update_onion, force_update_onion, update_opacity, update_peel_color, update_peel_xray#, switch_onion
 
 from bpy.props import BoolProperty, EnumProperty, \
     IntProperty, FloatVectorProperty, CollectionProperty, \
@@ -33,7 +33,7 @@ class GPOP_PGT_settings(bpy.types.PropertyGroup):
 
     # depth_offset : FloatProperty(name='Depth offset', default=0.025, min=0.001, max=10, precision=3, step=4,
     #     description='offset the onion peel in the depth from camera (increment if peels are overlapping each other in)',
-    #     update=update_onion)
+    #     update=force_update_onion)
 
     offset_mode : EnumProperty(
         name="Mode", description="Ghost offset mode", default='KEYS', options={'HIDDEN'}, update=None, get=None, set=None,
@@ -50,7 +50,7 @@ class GPOP_PGT_settings(bpy.types.PropertyGroup):
 
     keyframe_type : EnumProperty(
         name="Keyframe Filter", description="Only peel the onion for keyframe of chosen type", 
-        default='ALL', options={'HIDDEN'}, update=update_onion,
+        default='ALL', options={'HIDDEN'}, update=force_update_onion,
         items=(
             ('ALL', 'All', '', 0), # 'KEYFRAME'
             ('KEYFRAME', 'Keyframe', '', 'KEYTYPE_KEYFRAME_VEC', 1),
@@ -84,11 +84,11 @@ class GPOP_PGT_settings(bpy.types.PropertyGroup):
 
     before_num : IntProperty(
         name="Before", description="Number of previous ghost displayed",
-        default=2, min=1, max=32, soft_min=1, soft_max=16, step=1, options={'HIDDEN'}, update=update_onion)
+        default=2, min=1, max=32, soft_min=1, soft_max=16, step=1, options={'HIDDEN'}, update=force_update_onion)
     
     after_num : IntProperty(
         name="After", description="Number of next ghost displayed",
-        default=2, min=1, max=32, soft_min=1, soft_max=16, step=1, options={'HIDDEN'}, update=update_onion)    
+        default=2, min=1, max=32, soft_min=1, soft_max=16, step=1, options={'HIDDEN'}, update=force_update_onion)    
 
     # frames : CollectionProperty(type=GPOP_PGT_frame_settings)
     pos_frames : CollectionProperty(type=GPOP_PGT_frame_settings)
