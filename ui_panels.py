@@ -17,71 +17,42 @@ class GPOP_PT_onion_skinning_ui(bpy.types.Panel):
         if ob.name.startswith('.peel_'):
             layout.label(text='-- Peel object edit --')
             layout.label(text='Transforms onion peel')
-            layout.label(text='- Controls -') # modal infos
-            layout.label(text='ENTER / B : Valid') # modal infos
-            layout.label(text='ESC : Cancel') # modal infos
-            layout.label(text='G/R/S : Transform') # modal infos
-            layout.label(text='X : horizontal flip (Shift X : vertical)') # modal infos
+            layout.label(text='- Controls -')
+            layout.label(text='ENTER / B : Valid')
+            layout.label(text='ESC : Cancel')
+            layout.label(text='G/R/S : Transform')
+            layout.label(text='X : horizontal flip (Shift X : vertical)')
             layout.label(text='- - -')
-
-            # layout.label(text='/!\ Use only object mode /!\ ')
-
-            # Flip X/Y (global)
-            # row=layout.row()
-            # row.operator_context = 'EXEC_DEFAULT'
-            # rot = row.operator('transform.rotate', text='Flip X', icon='MOD_MIRROR')
-            # rot.orient_axis='Z'
-            # rot.orient_type='GLOBAL'
-            # rot.value=3.14159
-            
-            # rot = row.operator('transform.rotate', text='Flip Z', icon='EMPTY_SINGLE_ARROW')
-            # rot.orient_axis='X'
-            # rot.orient_type='GLOBAL'
-            # rot.value=3.14159
-            
-            # layout.separator()
-            # row=layout.row()
-            # row.scale_y = 2.0
-            # row.operator('gp.onion_back_to_object', text='Back To GP', icon='LOOP_BACK')
             return
 
         row = layout.row(align=False)
-        # row.operator('gp.onion_peel_gen', text='Generate', icon='ONIONSKIN_ON')
-        # if settings.
 
         icon = 'OUTLINER_OB_LIGHT' if settings.activated else 'LIGHT_DATA'
         state = 'Enabled' if settings.activated else 'Disabled'
         row.prop(settings, 'activated', text=state, emboss=True, icon=icon)
         row.prop(settings, 'world_space', text='World Space')
-        # row.prop(settings, 'depth_offset', text='Depth')
-        # row.prop(settings, 'only_active', text='Only Active')
+        # row.prop(settings, 'only_active', text='Only Active') # wip multi object use
         
         row = layout.row(align=False)
         row.operator('gp.onion_peel_refresh', text='Refresh', icon='ONIONSKIN_ON') # FILE_REFRESH
         row.operator('gp.onion_peel_delete', text='Delete', icon='LOCKVIEW_OFF')
         
         row = layout.row(align=True)
-        # row = layout.split(align=False, factor=0.5)
-        # layout.prop(settings, 'offset_mode') # WIP
+        # layout.prop(settings, 'offset_mode') # wip multi draw type mode
         row.prop(settings, 'keyframe_type', text='Filter')
         row.separator()
         
-        # row.prop(settings, 'xray', text='All X-ray', icon='XRAY') # xray bool update swap
-        # row.label(text='X-ray')
+
         row.scale_x = 0.69
         row.operator('gp.onion_swap_xray', text='X-ray', icon='XRAY').use_xray = True # xray ops swap
         row.operator('gp.onion_swap_xray', text='Off').use_xray = False # xray ops swap
-
-        # expected (data, property, text, text_ctxt, translate, icon, expand, slider, toggle, icon_only, event, full_event, emboss, index, icon_value, invert_checkbox)
         
         row = layout.row(align=True)
         row.prop(settings, 'before_num', text='')
         row.prop(settings, 'before_color', text='')
-        # row.prop(ob.data, 'before_color', text='') # propertie if custom
         
         row.separator()
         row.prop(settings, 'after_color', text='')
-        # row.prop(ob.data, 'after_color', text='') # propertie if custom
         row.prop(settings, 'after_num', text='')        
         
         col = layout.column()
@@ -90,18 +61,13 @@ class GPOP_PT_onion_skinning_ui(bpy.types.Panel):
         for i in [-i for i in range(1, settings.before_num+1)][::-1] + [0] + [i for i in range(1, settings.after_num+1)]:
             if i == 0:
                 ###  MIDDLE LINE
-                # col.separator()
                 row = col.row(align=True)
                 row.label(text='0')
                 row.label(text='', icon='BLANK1')
-                # row.label(text='0', icon='REMOVE') # without transforms
-                # row.label(text='', icon='REMOVE')
-                # row.label(text='', icon='COLLAPSEMENU')
                 row.operator('gp.onion_peel_pyramid_fade', text='', icon='RIGHTARROW') # LINCURVE
                 row.prop(settings, 'o_general', text='', slider=True)
                 # row.prop(ob, 'hide_viewport', text='', icon='HIDE_OFF')
                 row.prop(ob, 'show_in_front', text='', icon='XRAY')
-                # col.separator()
                 continue
             
             ### PEEL LINE
@@ -113,22 +79,15 @@ class GPOP_PT_onion_skinning_ui(bpy.types.Panel):
                 if i > len(settings.pos_frames) - 1:
                     continue
                 fsetting = settings.pos_frames[i]
-            
-            # if not peel:
-            #     continue # create a GP place holder ?
 
             peel = context.scene.objects.get(f'.peel_{ob.name} {i}')
             row = col.row(align=True)
-            # row = col.split(align=True, factor=0.2)
-            # CHECKBOX_DEHLT, CHECKBOX_HLT ? # show/hide with checkboxes (if more clear)
 
             # row.label(text=str(i), icon='DOT') # basic dot
             row.active = fsetting.visibility
             row.label(text=str(i))
             if peel and peel.get('outapeg'):
                 row.operator('gp.reset_peel_transform', text='', icon='X').peel_num = i # RADIOBUT_ON, TRANSFORM_ORIGINS, RADIOBUT_OFF, TRACKER
-                # row.operator('gp.reset_peel_transform', text=str(i)).peel_num = i # RADIOBUT_ON, TRANSFORM_ORIGINS, RADIOBUT_OFF, TRACKER
-                # row.separator()
                 row.operator('gp.onion_peel_tranform', text='', icon='MESH_CIRCLE').peel_num = i
             else:
                 #> Go to object mode
@@ -137,7 +96,6 @@ class GPOP_PT_onion_skinning_ui(bpy.types.Panel):
                 #> MODAL
                 # row.operator('gp.peel_custom_transform', text='', icon='DOT').peel_num = i
 
-            # row.separator()
             # pid = f'p{abs(i)}' if i < 0 else f'n{i}'
             row.prop(fsetting, 'opacity', text='', slider=True)
             row.prop(fsetting, 'visibility', text='', icon='HIDE_OFF')

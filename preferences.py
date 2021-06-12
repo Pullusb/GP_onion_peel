@@ -14,17 +14,11 @@ def get_addon_prefs():
     preferences = bpy.context.preferences
     addon_prefs = preferences.addons[addon_name].preferences
     return (addon_prefs)
-
-
 class GPOP_addon_prefs(bpy.types.AddonPreferences):
-    ## can be just __name__ if prefs are in the __init__ mainfile
-    # Else need the splitext '__name__ = addonname.subfile' (or use a static name)
-    bl_idname = __name__.split('.')[0] # or with: os.path.splitext(__name__)[0]
+    bl_idname = __name__.split('.')[0]
 
-    # some_bool_prop to display in the addon pref
     depth_offset : FloatProperty(name='Depth offset', default=0.035, min=0.001, max=10, precision=3, step=4,
         description='Offset the onion peels in the depth from active camera\n(increment if peels are overlapping each other)'
-        #update=update_onion # no update since it's in prefs...
         )
 
     use_default_color : BoolProperty(name='Use Default Color',
@@ -46,15 +40,11 @@ class GPOP_addon_prefs(bpy.types.AddonPreferences):
         description="Color for next onion peels",
         )
 
-
     use_osd_text : BoolProperty(name='Show help text', default=True,
     description='Display a help text when using custom transformation')
 
     def draw(self, context):
             layout = self.layout
-            # layout.use_property_split = True
-            # flow = layout.grid_flow(row_major=True, columns=0, even_columns=True, even_rows=False, align=False)
-            # layout = flow.column()
             layout.label(text='If some peels opacity overlap others, try bigger offset value')
             layout.prop(self, 'depth_offset', text='Peel Depth Offset')
 
@@ -67,7 +57,6 @@ class GPOP_addon_prefs(bpy.types.AddonPreferences):
             row.prop(self, 'default_after_color')
 
             box = layout.box()
-
             col = box.column()
             col.label(text='On Screen Display')
             col.prop(self, 'use_osd_text', text='Show help text on custom transformation')

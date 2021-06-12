@@ -1,12 +1,11 @@
 bl_info = {
     "name": "GP Onion Peel",
-    "description": "Custom Onion skinning using refreshed linked GP duplications",
+    "description": "Custom Onion skinning using refreshed GP duplications",
     "author": "Samuel Bernou",
-    "version": (0, 7, 8),
+    "version": (0, 7, 9),
     "blender": (2, 92, 0),
     "location": "View3D",
-    "warning": "",
-    "doc_url": "", # https://github.com/Pullusb/GP_onion_peel
+    "doc_url": "",
     "category": "Object" }
 
 if 'bpy' in locals():
@@ -27,9 +26,9 @@ else:
 
 from . import onion
 
-
 import bpy
 from bpy.app.handlers import persistent
+
 ### --- REGISTER ---
 
 @persistent
@@ -55,7 +54,7 @@ def restore_onion(dummy):
     if not on:
         return
     else:
-        # launch a refresh
+        # Refresh
         onion.force_update_onion(dummy, bpy.context)
     
     transfo_list = getattr(bpy.context.view_layer, 'onion_custom_transform', None)
@@ -66,7 +65,8 @@ def restore_onion(dummy):
         if not ob:
             continue
         ob['outapeg'] = outapeg
-    # re-refresh to set the offset
+    
+    # Re-refresh to set the offset
     onion.force_update_onion(dummy, bpy.context)
     del bpy.types.ViewLayer.onion_custom_transform
 
@@ -85,13 +85,10 @@ def register():
     properties.register()
     OT_onion_peel.register()
     ui_panels.register()
-    #-# assign default color if needed
-    ## CANT DO here - restricted context
 
     bpy.app.handlers.frame_change_post.append(onion.update_onion)
     
-    ## try trigerring on new key
-    # bpy.types.ViewLayer.gp_len_frame = 0
+    ## wip triger on new key
     # bpy.app.handlers.depsgraph_update_post.append(onion.trigger_on_key)
 
     bpy.app.handlers.save_pre.append(delete_onion)  

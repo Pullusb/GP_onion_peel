@@ -43,20 +43,14 @@ class GPOP_OT_onion_skin_refresh(bpy.types.Operator):
     @classmethod
     def poll(cls, context):
         return context.object and context.object.type == 'GPENCIL'
-    
-    # called : bpy.props.BoolProperty(default=False)
 
     def invoke(self, context, event):
-        # self.on_all = event.shift
         self.full_refresh = event.shift
         return self.execute(context)
 
     def execute(self, context):
-        # if not self.called:
-            # do not touch activate if called by it. 
         if not context.scene.gp_ons_setting.activated:
             context.scene.gp_ons_setting.activated = True
-        # self.called = False
         
         gpl = context.object.data.layers
         if self.full_refresh:
@@ -98,7 +92,6 @@ class GPOP_OT_onion_peel_pyramid_fade(bpy.types.Operator):
         return self.execute(context)
 
     def change_opacity(self, context, scol, i):
-        # pid = f'{pid_prefix}{i}'
         current_opacity = scol[abs(i)].opacity
         # current_opacity = getattr(self.settings, pid, 'opacity')
         
@@ -149,7 +142,7 @@ class GPOP_OT_onion_peel_pyramid_fade(bpy.types.Operator):
         return {"FINISHED"}
 
 
-### MODAL WITH FRAW HANDLER
+### MODAL WITH FRAME HANDLER
 
 def draw_callback_2d(self, context):
     if context.area != self._draw_area:
@@ -170,9 +163,8 @@ def draw_callback_2d(self, context):
     if self.use_osd_text:
         font_id = 0
         dpi = context.preferences.system.dpi
-        # Display current frame text
-        blf.color(font_id, *osd_color) # unpack color in argument
-        blf.position(font_id, context.region.width/3, 15, 0) # context.region.height-
+        blf.color(font_id, *osd_color) # unpack color
+        blf.position(font_id, context.region.width/3, 15, 0)
         blf.size(font_id, 16, dpi)
         blf.draw(font_id, f'Peel transform mode : G / R / S / X')
 
@@ -197,7 +189,6 @@ class GPOP_OT_onion_peel_tranform(bpy.types.Operator):
 
     def geometry_to_origin(self, ob, world=False):
         bbox_center = self.get_bbox_center(ob, world)
-        # C.scene.cursor.location = bbox_center
         for l in ob.data.layers:
             for s in l.active_frame.strokes:
                 coords = np.zeros(len(s.points)*3)
@@ -205,9 +196,9 @@ class GPOP_OT_onion_peel_tranform(bpy.types.Operator):
                 coords = coords.reshape((len(s.points), 3))
                 coords -= bbox_center
                 s.points.foreach_set('co', coords.flatten())
+                # s.points.update() # not working on all version, use point hack
                 s.points.add(1)
                 s.points.pop()
-                # s.points.update() # not working
 
     def invoke(self, context, event):
         if not context.scene.gp_ons_setting.activated:
@@ -246,14 +237,6 @@ class GPOP_OT_onion_peel_tranform(bpy.types.Operator):
         self.autokey = context.scene.tool_settings.use_keyframe_insert_auto
         context.scene.tool_settings.use_keyframe_insert_auto = False
 
-        ## case where there is already a transformation
-        # outaprev = peel.get('outapeg')
-        # if outaprev:
-        #     outaprev = Matrix(outaprev)
-        #     offset = peel.matrix_world.translation - ob.matrix_world.translation 
-        #     peel.matrix_world = outaprev.inverted() @ peel.matrix_world
-        #     peel.matrix_world.translation += offset
-
         self.peel = peel
         self.org_matrix = peel.matrix_world.copy()
 
@@ -284,17 +267,12 @@ class GPOP_OT_onion_peel_tranform(bpy.types.Operator):
         origin = self.get_bbox_center(self.peel, world=False)
         context.scene.cursor.location = origin
         self.geometry_to_origin(self.peel, world=False)
-        # peel.matrix_world.translation += origin @ peel.matrix_world.inverted()
+
         T = Matrix.Translation(origin)
         self.peel.matrix_world = self.peel.matrix_world @ T
 
         # ## store new starting point
         self.geo_org_matrix = self.peel.matrix_world.copy()
-        # self.geo_org_vec = origin
-        
-        # launching ops dont work
-        # bpy.ops.transform.translate() 
-
 
         ## screen color frame
         r = bpy.context.region
@@ -303,7 +281,6 @@ class GPOP_OT_onion_peel_tranform(bpy.types.Operator):
 
         self.shader_2d = gpu.shader.from_builtin('2D_UNIFORM_COLOR')
         self.screen_framing = batch_for_shader(
-        # self.shader_2d, 'LINE_STRIP', {"pos": [(0,0), (0,h), (w,h), (w,0), (0,0)]})
         self.shader_2d, 'LINE_LOOP', {"pos": [(0,0), (0,h), (w,h), (w,0)]})
         
         ## OpenGL handler
@@ -321,7 +298,6 @@ class GPOP_OT_onion_peel_tranform(bpy.types.Operator):
         self.main_obj.select_set(True)
         context.view_layer.objects.active = self.main_obj
         self.peel.select_set(False)
-        # self.peel.location = self.peel.location
         # restore mode
         context.area.header_text_set(None)
         bpy.ops.object.mode_set(mode=self.gp_last_mode)
@@ -345,26 +321,13 @@ class GPOP_OT_onion_peel_tranform(bpy.types.Operator):
 
         source_mat = Matrix(self.peel['mat'])
 
-        ## debug
-        # print(f'\
-        # peel   : {self.peel.matrix_world.translation}\n\
-        # geo_org: {self.geo_org_matrix.translation}\n\
-        # src_mat: {source_mat.translation}\n\
-        # ')
-        
-        # print(f'Scales:\n\
-        # peel   : {self.peel.matrix_world.to_scale()}\n\
-        # geo_org: {self.geo_org_matrix.to_scale()}\n\
-        # src_mat: {source_mat.to_scale()}\n\
-        # ')
-
         ## Get offset matrix
         mat = self.peel.matrix_world @ (self.geo_org_matrix.inverted() @ source_mat)
         
-        ## Apply offset from original object  (cancel it, will be applyed at exit refreshed)
+        ## Apply offset from original object  (cancel it, will be applyed at exit refresh)
         mat = self.main_obj.matrix_world.inverted() @ mat
 
-        self.peel['outapeg'] = mat.copy()# [v[:] for v in mat] # mat # str(list(mat))
+        self.peel['outapeg'] = mat.copy()
         self.exit(context)
 
     def modal(self, context, event):
@@ -407,7 +370,6 @@ class GPOP_OT_onion_peel_tranform(bpy.types.Operator):
             return {"CANCELLED"}
 
         if event.type in {'RET', 'B'} and event.value == 'PRESS':
-            # context.scene.frame_current = self.init_frame
             self.back_to_object(context)
             return {"FINISHED"}
 
@@ -487,8 +449,6 @@ GPOP_OT_onion_peel_tranform,
 GPOP_OT_onion_reset_peel_transform,
 GPOP_OT_onion_swap_xray,
 )
-
-# TODO Add handler on frame post to refresh the timeline offset
 
 def register():
     for cls in classes:

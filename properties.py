@@ -1,6 +1,6 @@
 import bpy
 from . import preferences
-from .onion import update_onion, force_update_onion, update_opacity, update_peel_color, update_peel_xray#, switch_onion
+from .onion import update_onion, force_update_onion, update_opacity, update_peel_color # update_peel_xray , switch_onion
 
 from bpy.props import BoolProperty, EnumProperty, \
     IntProperty, FloatVectorProperty, CollectionProperty, \
@@ -9,15 +9,6 @@ from bpy.props import BoolProperty, EnumProperty, \
 class GPOP_PGT_frame_settings(bpy.types.PropertyGroup):
     opacity : IntProperty(default=100, min=1, max=100, subtype='PERCENTAGE', options={'HIDDEN'}, update=update_opacity)
     visibility : BoolProperty(default=True, options={'HIDDEN'}, update=update_opacity)
-
-    ## Tranforms need to be stored at object level since there are multiple objects...
-    # matrix : FloatVectorProperty(subtype='MATRIX', size=16, options={'HIDDEN'}) # default=(0.0, 0.0, 0.0, 0.0), 
-    # transformed : BoolProperty(default=False) #Tell if a transform (matrix) is applied to the peel.
-    
-    #-# add or remove collection prop elements
-    # frames[0].add()
-    # frames.remove(index)
-
 class GPOP_PGT_settings(bpy.types.PropertyGroup):
 
     activated : BoolProperty(name='Activate', default=False,
@@ -25,15 +16,12 @@ class GPOP_PGT_settings(bpy.types.PropertyGroup):
         # update=switch_onion
         )
     
+    ## Wip target choice
     # only_active : BoolProperty(name='Only Active', default=True,
     # description='Refresh only active object peels, and hide other, else refresh all (can slow down)')
     
     world_space : BoolProperty(name='World Space', default=False,
         description='Consider the object animation to place onion peels in world space (Else local space)\nIf your GP object does not move, disable for better performance')
-
-    # depth_offset : FloatProperty(name='Depth offset', default=0.025, min=0.001, max=10, precision=3, step=4,
-    #     description='offset the onion peel in the depth from camera (increment if peels are overlapping each other in)',
-    #     update=force_update_onion)
 
     offset_mode : EnumProperty(
         name="Mode", description="Ghost offset mode", default='KEYS', options={'HIDDEN'}, update=None, get=None, set=None,
@@ -41,7 +29,6 @@ class GPOP_PGT_settings(bpy.types.PropertyGroup):
             ('KEYS', 'Keys', 'Ghost number are keys', 0),   
             ('FRAMES', 'Frames', 'Ghost number are frames', 1),
             ))
-        # (key, label, descr, id[, icon])
 
     # xray : BoolProperty(name='X-ray', default=False,
     #     description='Set "In Front" mode for both object and the onion peels',
@@ -59,10 +46,6 @@ class GPOP_PGT_settings(bpy.types.PropertyGroup):
             ('EXTREME', 'Extreme', '', 'KEYTYPE_EXTREME_VEC', 4),
             ('JITTER', 'Jitter', '', 'KEYTYPE_JITTER_VEC', 5),
             ))
-
-    # prefs is None at register
-    # prefs = preferences.get_addon_prefs()
-    # prefs.default_before_color
 
     before_color : FloatVectorProperty(  
         name="Before Color",
@@ -90,7 +73,6 @@ class GPOP_PGT_settings(bpy.types.PropertyGroup):
         name="After", description="Number of next ghost displayed",
         default=2, min=1, max=32, soft_min=1, soft_max=16, step=1, options={'HIDDEN'}, update=force_update_onion)    
 
-    # frames : CollectionProperty(type=GPOP_PGT_frame_settings)
     pos_frames : CollectionProperty(type=GPOP_PGT_frame_settings)
     neg_frames : CollectionProperty(type=GPOP_PGT_frame_settings)
     
@@ -112,10 +94,8 @@ def register():
         bpy.utils.register_class(cls)
     
     bpy.types.Scene.gp_ons_setting = PointerProperty(type = GPOP_PGT_settings)
-    # bpy.app.handlers.load_post.append(activator)
 
 def unregister():
-    # bpy.app.handlers.load_post.remove(activator)
     for cls in reversed(classes):
         bpy.utils.unregister_class(cls)
     del bpy.types.Scene.gp_ons_setting
