@@ -42,10 +42,10 @@ def clear_peels(full_clear=False):
         obj_pool = op_col.all_objects
         col_pool = get_collection_childs_recursive(op_col)
 
-    for o in obj_pool:
+    for o in reversed(obj_pool):
         if o.name.startswith('.peel_'):
             bpy.data.objects.remove(o)
-    for c in col_pool:
+    for c in reversed(col_pool):
         if c and c.name.startswith('.peel_'):
             bpy.data.collections.remove(c)
 
@@ -62,7 +62,7 @@ def clear_current_peel(ob):
     col = bpy.data.collections.get(to_onion_name(name))
     if not col:
         return
-    for o in col.all_objects:
+    for o in reversed(col.all_objects):
         bpy.data.objects.remove(o)
     bpy.data.collections.remove(col)
 
@@ -75,17 +75,17 @@ def clean_peels():
     op_col = bpy.data.collections.get('.onion_peels')
     if not op_col:
         return
-    for c in op_col.children:
+    for c in reversed(op_col.children):
         # name -> '.peel_obj_name'
         source_obj_name = c.name[len('.onion_'):]
         if not bpy.context.scene.objects.get(source_obj_name):
-            for o in c.all_objects:
+            for o in reversed(c.all_objects):
                 print('in clean : deleted', o.name) #dbg
                 bpy.data.objects.remove(o)
             bpy.data.collections.remove(c)
     
     if not len(op_col.children):
-        for ob in op_col.all_objects[:]:
+        for ob in reversed(op_col.all_objects[:]): # reversed not needed ? ([:] create a copy)
             if ob.name.startwith('.peel_'):
                 bpy.data.objects.remove(ob)
         
@@ -414,7 +414,7 @@ def update_onion(self, context):
         context.scene.frame_set(cur_frame)
     
     # Delete too much peels
-    for o in peel_col.objects:
+    for o in reversed(peel_col.objects):
         if o not in used:
             bpy.data.objects.remove(o)
             continue

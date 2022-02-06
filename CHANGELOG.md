@@ -1,5 +1,8 @@
 ## Changelog:
 
+0.8.0
+
+- fix: crashes on save and delete
 
 0.7.9
 
