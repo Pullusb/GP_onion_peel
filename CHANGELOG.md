@@ -1,5 +1,9 @@
 ## Changelog:
 
+0.9.0
+
+- added: when editing a peel, show scale offset factor (if not 1.0)
+
 0.8.0
 
 - fix: crashes on save and delete

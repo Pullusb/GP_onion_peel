@@ -1,7 +1,7 @@
 from .preferences import get_addon_prefs
 import bpy
 from . import onion
-from math import pi
+from math import pi, isclose
 import numpy as np
 from mathutils import Matrix, Vector
 import gpu
@@ -164,9 +164,19 @@ def draw_callback_2d(self, context):
         font_id = 0
         dpi = context.preferences.system.dpi
         blf.color(font_id, *osd_color) # unpack color
-        blf.position(font_id, context.region.width/3, 15, 0)
+        blf.position(font_id, context.region.width / 3, 15, 0)
         blf.size(font_id, 16, dpi)
         blf.draw(font_id, f'Peel transform mode : G / R / S / X')
+        
+        if not isclose(self.scale_offset[0], 1.0, rel_tol=0.0001):
+            blf.position(font_id, context.region.width / 3, 45, 0)
+            # if all([isclose(self.scale_offset[0], i, rel_tol=0.0001) for i in self.scale_offset[1:]]):
+            #     scale_text = f'{self.scale_offset[0]:.2f}'
+            # else:
+            #     scale_text = [f'{i:.2f}' for i in self.scale_offset]
+            # blf.draw(font_id, f'Scale Factor: {scale_text}')
+            blf.draw(font_id, f'Scale Factor: {self.scale_offset[0]:.3f}')
+            
 
 class GPOP_OT_onion_peel_tranform(bpy.types.Operator):
     bl_idname = "gp.onion_peel_tranform"
@@ -199,6 +209,14 @@ class GPOP_OT_onion_peel_tranform(bpy.types.Operator):
                 # s.points.update() # not working on all version, use point hack
                 s.points.add(1)
                 s.points.pop()
+
+    def get_offset_matrix(self):
+        source_mat = Matrix(self.peel['mat'])
+        ## Get offset matrix
+        mat = self.peel.matrix_world @ (self.geo_org_matrix.inverted() @ source_mat)
+        ## Apply offset from original object  (cancel it, will be applyed at exit refresh)
+        mat = self.main_obj.matrix_world.inverted() @ mat
+        return mat
 
     def invoke(self, context, event):
         if not context.scene.gp_ons_setting.activated:
@@ -246,6 +264,7 @@ class GPOP_OT_onion_peel_tranform(bpy.types.Operator):
         self.peel.matrix_world = Matrix(self.peel['mat'])
 
         self.init_frame = context.scene.frame_current
+        self.scale_offset = (1.0, 1.0, 1.0)
         
         # make it selectable and set as active
         bpy.ops.object.mode_set(mode='OBJECT')
@@ -318,21 +337,13 @@ class GPOP_OT_onion_peel_tranform(bpy.types.Operator):
         self.exit(context)
 
     def back_to_object(self, context):
-
-        source_mat = Matrix(self.peel['mat'])
-
-        ## Get offset matrix
-        mat = self.peel.matrix_world @ (self.geo_org_matrix.inverted() @ source_mat)
-        
-        ## Apply offset from original object  (cancel it, will be applyed at exit refresh)
-        mat = self.main_obj.matrix_world.inverted() @ mat
-
+        mat = self.get_offset_matrix()
         self.peel['outapeg'] = mat.copy()
         self.exit(context)
 
     def modal(self, context, event):
+        self.scale_offset = self.get_offset_matrix().to_scale()
         context.area.header_text_set(f'Pick onion peel - use G:move / R:rotate / S:scale / X,M:mirror')
-
         if context.view_layer.objects.active != self.peel:
             self.report({'WARNING'}, "Only selected peel must be moved before pressing ENTER")
             tmp = context.view_layer.objects.active
@@ -369,7 +380,7 @@ class GPOP_OT_onion_peel_tranform(bpy.types.Operator):
             self.cancel(context)
             return {"CANCELLED"}
 
-        if event.type in {'RET', 'B'} and event.value == 'PRESS':
+        if event.type in {'RET', 'NUMPAD_ENTER', 'B'} and event.value == 'PRESS': # 'SPACE'
             self.back_to_object(context)
             return {"FINISHED"}
 
