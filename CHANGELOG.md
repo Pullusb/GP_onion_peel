@@ -1,5 +1,10 @@
 ## Changelog:
 
+0.9.1
+
+- added: Copy another peel transform using `Ctrl + Click`
+- fixed: Saving file messing with peel visibility
+
 0.9.0
 
 - added: when editing a peel, show scale offset factor (if not 1.0)

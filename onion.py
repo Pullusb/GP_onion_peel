@@ -233,6 +233,7 @@ def set_layer_opacity_by_mod(mods, layer_name, value):
 def force_update_onion(self, context):
     bpy.context.scene.gp_ons_setting.frame_prev = -9999
     update_onion(self, context)
+    update_opacity(self, context)
 
 @persistent
 def update_onion(self, context):
@@ -438,7 +439,6 @@ def update_onion(self, context):
     # Hide other objects onions (show only active object onion)
     for c in op_col.children:
         c.hide_viewport = c is not peel_col
-
 
 def update_opacity(self, context):
     settings = context.scene.gp_ons_setting

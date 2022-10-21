@@ -181,7 +181,8 @@ def draw_callback_2d(self, context):
 class GPOP_OT_onion_peel_tranform(bpy.types.Operator):
     bl_idname = "gp.onion_peel_tranform"
     bl_label = "Peel Custom Transform"
-    bl_description = "Place or replace the onion peel"
+    bl_description = "Place or replace the onion peel\
+        \nCtrl + Click to copy transform from another peel"
     bl_options = {"REGISTER", "INTERNAL"}
 
     @classmethod
@@ -219,6 +220,9 @@ class GPOP_OT_onion_peel_tranform(bpy.types.Operator):
         return mat
 
     def invoke(self, context, event):
+        print('event.ctrl: ', event.ctrl)
+        print('event.shift: ', event.shift)
+        print('event.alt: ', event.alt)
         if not context.scene.gp_ons_setting.activated:
             self.report({'WARNING'}, f'Onion Peels are disabled\nEnable or refresh first')
             return {"CANCELLED"}
@@ -247,6 +251,20 @@ class GPOP_OT_onion_peel_tranform(bpy.types.Operator):
         if not ok:
             self.report({'WARNING'}, f'This peel is empty (probably out keyframe of range)')
             return {"CANCELLED"}
+        
+        self.peel = peel
+
+        ## if control is pressed, popup a panel to copy another peel offset (outapeg)
+        if event.ctrl:
+            ## list other peels
+            self.other_transformed_peels = [p for p in peel.users_collection[0].all_objects\
+                            if p is not peel\
+                            and p.get('outapeg')]
+            print('other_transformed_peels: ', self.other_transformed_peels)
+            if not self.other_transformed_peels:
+                self.report({'ERROR'}, f'No other peel has a transform to copy')
+                return {"CANCELLED"}
+            return context.window_manager.invoke_props_dialog(self) # , width=popup_width
 
         context.scene.gp_ons_setting.frame_prev = -9999
         prefs = get_addon_prefs()
@@ -255,7 +273,6 @@ class GPOP_OT_onion_peel_tranform(bpy.types.Operator):
         self.autokey = context.scene.tool_settings.use_keyframe_insert_auto
         context.scene.tool_settings.use_keyframe_insert_auto = False
 
-        self.peel = peel
         self.org_matrix = peel.matrix_world.copy()
 
         self.gp_last_mode = context.mode
@@ -311,6 +328,15 @@ class GPOP_OT_onion_peel_tranform(bpy.types.Operator):
         context.window_manager.modal_handler_add(self)
         return {'RUNNING_MODAL'}
     
+    def draw(self, context):
+        layout = self.layout
+        for p in self.other_transformed_peels:
+            op = layout.operator('gp.copy_peel_transform', text=f'Copy From Peel {p.name.rsplit()[-1]}')
+            op.src = p.name
+            op.dest = self.peel.name
+
+    def execute(self, context):
+        return {"FINISHED"}
 
     def exit(self, context):
         self.peel.hide_select = True
@@ -386,6 +412,34 @@ class GPOP_OT_onion_peel_tranform(bpy.types.Operator):
 
         return {'RUNNING_MODAL'}
 
+class GPOP_OT_copy_peel_transform(bpy.types.Operator):
+    bl_idname = "gp.copy_peel_transform"
+    bl_label = "Copy Peel Transform"
+    bl_description = "Copy the transform of a peel to another"
+    bl_options = {"REGISTER", "INTERNAL"}
+
+    @classmethod
+    def poll(cls, context):
+        return context.object and context.object.type == 'GPENCIL'
+
+    src : bpy.props.StringProperty()
+    dest : bpy.props.StringProperty()
+
+    def execute(self, context):
+        source = context.scene.objects.get(self.src)
+        destination = context.scene.objects.get(self.dest)
+        if not source or not destination:
+            self.report({'ERROR'}, f'Could not copy peel transform from {self.src} to {self.dest}')
+            return {"CANCELLED"}
+        
+        # Assign outapeg value
+        destination['outapeg'] = source['outapeg']
+
+        # since the propery is deleted the reevaluation will reset it
+        onion.force_update_onion(self, context)
+        bpy.ops.ed.undo_push(message='Copy Peel transform')
+        return {"FINISHED"}
+
 class GPOP_OT_onion_reset_peel_transform(bpy.types.Operator):
     bl_idname = "gp.reset_peel_transform"
     bl_label = "Reset Peel Transform"
@@ -456,6 +510,7 @@ classes=(
 GPOP_OT_onion_skin_refresh,
 GPOP_OT_onion_skin_delete,
 GPOP_OT_onion_peel_pyramid_fade,
+GPOP_OT_copy_peel_transform,
 GPOP_OT_onion_peel_tranform,
 GPOP_OT_onion_reset_peel_transform,
 GPOP_OT_onion_swap_xray,
