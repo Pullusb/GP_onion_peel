@@ -1,4 +1,8 @@
-## Changelog:
+# Changelog
+
+0.9.2
+
+- changed: Clicking the Enable/Disable button update visibility (trigger onion update)
 
 0.9.1
 

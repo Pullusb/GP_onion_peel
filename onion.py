@@ -265,7 +265,7 @@ def update_onion(self, context):
     if not [l for l in gpl if l.use_onion_skinning and not l.hide]: # Skip if no onion layers
         return
 
-    scene.gp_ons_setting.activated = False #Mtx avoid infinite recursion
+    scene.gp_ons_setting['activated'] = False #Mtx avoid infinite recursion
 
     ## Full delete-recreate of object seem to resolve the crash : edit stroke > change frame > ctrl-Z > Crash
     clean_peels()
@@ -323,7 +323,7 @@ def update_onion(self, context):
 
     if not layers:
         peel_col.hide_viewport = True
-        settings.activated = True
+        settings['activated'] = True
         return
         
     count = 0
@@ -433,7 +433,7 @@ def update_onion(self, context):
         if not gp.users and gp.name.startswith('.peel'):
             bpy.data.grease_pencils.remove(gp)
 
-    scene.gp_ons_setting.activated = True #Mtx avoid infinite recursion
+    scene.gp_ons_setting['activated'] = True #Mtx avoid infinite recursion
     op_col.hide_viewport = peel_col.hide_viewport = False
     
     # Hide other objects onions (show only active object onion)

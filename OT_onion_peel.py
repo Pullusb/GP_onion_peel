@@ -220,9 +220,6 @@ class GPOP_OT_onion_peel_tranform(bpy.types.Operator):
         return mat
 
     def invoke(self, context, event):
-        print('event.ctrl: ', event.ctrl)
-        print('event.shift: ', event.shift)
-        print('event.alt: ', event.alt)
         if not context.scene.gp_ons_setting.activated:
             self.report({'WARNING'}, f'Onion Peels are disabled\nEnable or refresh first')
             return {"CANCELLED"}
@@ -435,7 +432,7 @@ class GPOP_OT_copy_peel_transform(bpy.types.Operator):
         # Assign outapeg value
         destination['outapeg'] = source['outapeg']
 
-        # since the propery is deleted the reevaluation will reset it
+        # since the property is deleted the reevaluation will reset it
         onion.force_update_onion(self, context)
         bpy.ops.ed.undo_push(message='Copy Peel transform')
         return {"FINISHED"}

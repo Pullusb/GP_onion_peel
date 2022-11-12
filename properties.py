@@ -1,6 +1,6 @@
 import bpy
 from . import preferences
-from .onion import update_onion, force_update_onion, update_opacity, update_peel_color # update_peel_xray , switch_onion
+from .onion import update_onion, force_update_onion, update_opacity, update_peel_color
 
 from bpy.props import BoolProperty, EnumProperty, \
     IntProperty, FloatVectorProperty, CollectionProperty, \
@@ -13,7 +13,7 @@ class GPOP_PGT_settings(bpy.types.PropertyGroup):
 
     activated : BoolProperty(name='Activate', default=False,
         description='Activate the onion skinning with auto-refresh on frame change',
-        # update=switch_onion
+        update=force_update_onion
         )
     
     ## Wip target choice
