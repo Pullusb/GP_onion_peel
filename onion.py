@@ -286,6 +286,7 @@ def update_onion(self, context):
     peelname = to_peel_name(ob.name)
     
     depth_offset = preferences.get_addon_prefs().depth_offset
+    depth_offset = depth_offset if not preferences.get_addon_prefs().peel_in_front else -depth_offset
     cur_frame = scene.frame_current
     settings = scene.gp_ons_setting
     opacity_factor = settings.o_general / 100

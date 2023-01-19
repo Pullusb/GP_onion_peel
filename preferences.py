@@ -17,12 +17,20 @@ def get_addon_prefs():
 class GPOP_addon_prefs(bpy.types.AddonPreferences):
     bl_idname = __name__.split('.')[0]
 
-    depth_offset : FloatProperty(name='Depth offset', default=0.035, min=0.001, max=10, precision=3, step=4,
-        description='Offset the onion peels in the depth from active camera\n(increment if peels are overlapping each other)'
+    depth_offset : FloatProperty(name='Depth Offset', default=0.035,
+        soft_min=0.001, soft_max=10,
+        min=0.0001, max=100,
+        precision=3, step=2,
+        description='Offset the onion peels in the depth from active camera\
+            \nIncrement if peels are overlapping each other'
         )
 
+    peel_in_front : BoolProperty(name='Peel In Front',
+        default=False,
+        description='Show peel in front of the object instead of behind (can be usefull when doing fill color)')
+
     use_default_color : BoolProperty(name='Use Default Color',
-    description='Set these default color as onion skin when opening a blend')
+        description='Set these default color as onion skin when opening a blend')
 
     default_before_color : FloatVectorProperty(  
         name="Before Color",
@@ -47,6 +55,7 @@ class GPOP_addon_prefs(bpy.types.AddonPreferences):
             layout = self.layout
             layout.label(text='If some peels opacity overlap others, try bigger offset value')
             layout.prop(self, 'depth_offset', text='Peel Depth Offset')
+            layout.prop(self, 'peel_in_front', text='Peels In Front (only usefull when working with fills)')
 
             box = layout.box()
             col = box.column()

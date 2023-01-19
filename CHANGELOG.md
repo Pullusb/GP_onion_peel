@@ -1,5 +1,9 @@
 # Changelog
 
+0.9.3
+
+- added: New `Peel In Front` preference property to make peels appear in front of the object
+
 0.9.2
 
 - changed: Clicking the Enable/Disable button update visibility (trigger onion update)

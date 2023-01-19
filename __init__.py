@@ -2,7 +2,7 @@ bl_info = {
     "name": "GP Onion Peel",
     "description": "Custom Onion skinning using refreshed GP duplications",
     "author": "Samuel Bernou",
-    "version": (0, 9, 2),
+    "version": (0, 9, 3),
     "blender": (3, 0, 0),
     "location": "View3D",
     "doc_url": "https://pullusb.gumroad.com/l/gp_onion_peel",
