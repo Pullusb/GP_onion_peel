@@ -276,7 +276,7 @@ def update_onion(self, context):
     dummy = bpy.data.grease_pencils.get('.dummy')
     if not dummy:
         dummy = bpy.data.grease_pencils.new('.dummy')
-    for o in peel_col.all_objects:
+    for o in reversed(peel_col.all_objects):
         old = o.data
         o.data = dummy # no need to delete old data, "garbage collected" at update end
         bpy.data.grease_pencils.remove(old)

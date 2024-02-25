@@ -1,5 +1,11 @@
 # Changelog
 
+1.0.0
+
+- fixed: compatibility with Blender 4.0+ (should still be retro-compatible with anterior version)
+- fixed: API changes for gpu render
+- fixed: crashes when peels are updated
+
 0.9.3
 
 - added: New `Peel In Front` preference property to make peels appear in front of the object

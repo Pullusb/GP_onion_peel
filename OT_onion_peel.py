@@ -5,7 +5,6 @@ from math import pi, isclose
 import numpy as np
 from mathutils import Matrix, Vector
 import gpu
-import bgl
 import blf
 from gpu_extras.batch import batch_for_shader
 
@@ -151,13 +150,21 @@ def draw_callback_2d(self, context):
     # green -> (0.06, 0.4, 0.040, 0.6)
     # orange -> (0.45, 0.18, 0.03, 1.0)
     osd_color = (0.06, 0.4, 0.040, 0.75)
-    bgl.glLineWidth(10)
-    self.shader_2d.bind()
-    self.shader_2d.uniform_float("color", osd_color)
-    self.screen_framing.draw(self.shader_2d)
-    
-    # Reset
-    bgl.glLineWidth(1)
+    if bpy.app.version < (3,6,0):
+        import bgl
+        bgl.glLineWidth(10)
+        self.shader_2d.bind()
+        self.shader_2d.uniform_float("color", osd_color)
+        self.screen_framing.draw(self.shader_2d)
+        # Reset
+        bgl.glLineWidth(1)
+    else:
+        gpu.state.line_width_set(10.0)
+        self.shader_2d.bind()
+        self.shader_2d.uniform_float("color", osd_color)
+        self.screen_framing.draw(self.shader_2d)
+        # Reset
+        gpu.state.line_width_set(1.0)
 
     # Display Text
     if self.use_osd_text:
@@ -165,7 +172,10 @@ def draw_callback_2d(self, context):
         dpi = context.preferences.system.dpi
         blf.color(font_id, *osd_color) # unpack color
         blf.position(font_id, context.region.width / 3, 15, 0)
-        blf.size(font_id, 16, dpi)
+        if bpy.app.version < (4,0,0):
+            blf.size(font_id, 16, dpi)
+        else:
+            blf.size(font_id, 16)
         blf.draw(font_id, f'Peel transform mode : G / R / S / X')
         
         if not isclose(self.scale_offset[0], 1.0, rel_tol=0.0001):
@@ -312,9 +322,17 @@ class GPOP_OT_onion_peel_tranform(bpy.types.Operator):
         w = r.width
         h = r.height
 
-        self.shader_2d = gpu.shader.from_builtin('2D_UNIFORM_COLOR')
-        self.screen_framing = batch_for_shader(
-        self.shader_2d, 'LINE_LOOP', {"pos": [(0,0), (0,h), (w,h), (w,0)]})
+        if bpy.app.version < (4,0,0):
+            self.shader_2d = gpu.shader.from_builtin('2D_UNIFORM_COLOR')
+            self.screen_framing = batch_for_shader(
+            self.shader_2d, 'LINE_LOOP', {"pos": [(0,0), (0,h), (w,h), (w,0)]})
+        else:
+            self.shader_2d = gpu.shader.from_builtin('POLYLINE_UNIFORM_COLOR')
+            self.screen_framing = batch_for_shader(
+            self.shader_2d, 'LINES', {"pos": [(0,0), (0,h), (w,h), (w,0)]},
+                                      indices=[(0,1),(1,2),(2,3),(3,0)])
+
+            #   "indices": [0,1,1,2,2,3,3,0]})
         
         ## OpenGL handler
         self._draw_area = context.area
