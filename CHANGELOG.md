@@ -2,7 +2,7 @@
 
 1.0.1
 
-- fixed: Disable native nion skin with `Enabled` toggle, previously only with `Refresh` button
+- fixed: Disable native onion skin with `Enabled` toggle (previously done only with `Refresh` button)
 
 1.0.0
 
