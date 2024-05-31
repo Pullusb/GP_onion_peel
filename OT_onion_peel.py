@@ -71,7 +71,9 @@ class GPOP_OT_onion_skin_refresh(bpy.types.Operator):
             
             # just refresh existing (need to replace create and auto-clean if needed)
             onion.force_update_onion(self, context)
-            context.space_data.overlay.use_gpencil_onion_skin = False
+            
+            ## remove native onion skin (done in force_update_onion now)
+            # context.space_data.overlay.use_gpencil_onion_skin = False
 
 
         return {"FINISHED"}

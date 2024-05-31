@@ -1,5 +1,9 @@
 # Changelog
 
+1.0.1
+
+- fixed: Disable native nion skin with `Enabled` toggle, previously only with `Refresh` button
+
 1.0.0
 
 - fixed: compatibility with Blender 4.0+ (should still be retro-compatible with anterior version)

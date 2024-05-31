@@ -12,6 +12,10 @@ def to_peel_name(name):
     return f'.peel_{name}'
 
 def clear_native_overlay():
+    if bpy.context.area.type == 'VIEW_3D':
+        bpy.context.space_data.overlay.use_gpencil_onion_skin = False
+        return
+    ## Else search in all areas
     for window in bpy.context.window_manager.windows:
         screen = window.screen
         for area in screen.areas:
@@ -232,6 +236,8 @@ def set_layer_opacity_by_mod(mods, layer_name, value):
 
 def force_update_onion(self, context):
     bpy.context.scene.gp_ons_setting.frame_prev = -9999
+    if bpy.context.scene.gp_ons_setting.activated:
+        clear_native_overlay()
     update_onion(self, context)
     update_opacity(self, context)
 
