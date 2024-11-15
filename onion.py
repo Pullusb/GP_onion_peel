@@ -169,12 +169,12 @@ def create_peel_col(context):
     return op_col, peel_col
 
 def clean_mods(gpob):
-    layer_list = [l.info for l in gpob.data.layers]
-    pgm = gpob.grease_pencil_modifiers
+    layer_list = [l.name for l in gpob.data.layers]
+    pgm = gpob.modifiers
     for m in pgm:
-        if m.type not in ('GP_TIME', 'GP_OPACITY'):
+        if m.type not in ('GREASE_PENCIL_TIME', 'GREASE_PENCIL_OPACITY'):
             continue
-        if m.layer not in layer_list:
+        if m.layer_filter not in layer_list:
             pgm.remove(m)
 
 def scale_matrix_from_vector(scale):
@@ -224,7 +224,7 @@ def get_new_matrix_with_offset(matrix, offset=0.0001):
 def set_layer_opacity_by_mod(mods, layer_name, value):
     mod_opa = mods.get(f'{layer_name}_opacity')
     if not mod_opa:
-        mod_opa = mods.new(f'{layer_name}_opacity','GP_OPACITY')
+        mod_opa = mods.new(f'{layer_name}_opacity','GREASE_PENCIL_OPACITY')
         mod_opa.normalize_opacity = True
     mod_opa.factor = value
     mod_opa.layer = layer_name
@@ -244,7 +244,7 @@ def force_update_onion(self, context):
 @persistent
 def update_onion(self, context):
     ob = bpy.context.object
-    if not ob or ob.type != 'GPENCIL' or ob.name.startswith('.peel'):
+    if not ob or ob.type != 'GREASEPENCIL' or ob.name.startswith('.peel'):
         return
     
     scene = context.scene
@@ -320,7 +320,7 @@ def update_onion(self, context):
         if not frames: # complete skip of empty layers
             continue
 
-        info = l.info
+        info = l.name
         previous = [f for f in frames if f.frame_number <= cur_frame]
         following = [f for f in frames if f.frame_number > cur_frame]
 
@@ -341,8 +341,8 @@ def update_onion(self, context):
         peel_name = f'{peelname} {num}'
         peel = op_col.all_objects.get(peel_name)
 
-        data = bpy.data.grease_pencils.new(peel_name)
-        data.pixel_factor = ob.data.pixel_factor
+        data = bpy.data.grease_pencils_v3.new(peel_name)
+        # data.pixel_factor = ob.data.pixel_factor # gpv2
         ## get same material stack
         for i, m in enumerate(ob.data.materials):
             data.materials.append(m)
@@ -382,7 +382,7 @@ def update_onion(self, context):
                 continue
 
             nl = data.layers.new(info)
-            f = nl.frames.copy(mark)
+            f = nl.frames.copy(mark) # FIXME: gpv3: can only copy a frame from the same layer
             f.frame_number = cur_frame
             nl.use_lights = False
             nl.opacity = fsetting.opacity / 100 * opacity_factor
@@ -506,7 +506,7 @@ def update_peel_xray(self, context):
 ## Experimental
 def trigger_on_key(self, context):
     ob = bpy.context.object
-    if not ob or ob.type != 'GPENCIL' or ob.name.startswith('.peel'):
+    if not ob or ob.type != 'GREASEPENCIL' or ob.name.startswith('.peel'):
         return
     if not bpy.context.scene.gp_ons_setting.activated: 
         return

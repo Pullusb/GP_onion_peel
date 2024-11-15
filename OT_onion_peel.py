@@ -17,7 +17,7 @@ class GPOP_OT_onion_skin_delete(bpy.types.Operator):
 
     @classmethod
     def poll(cls, context):
-        return context.object and context.object.type == 'GPENCIL'
+        return context.object and context.object.type == 'GREASEPENCIL'
     
     def invoke(self, context, event):
         self.on_all = event.shift
@@ -41,7 +41,7 @@ class GPOP_OT_onion_skin_refresh(bpy.types.Operator):
 
     @classmethod
     def poll(cls, context):
-        return context.object and context.object.type == 'GPENCIL'
+        return context.object and context.object.type == 'GREASEPENCIL'
 
     def invoke(self, context, event):
         self.full_refresh = event.shift
@@ -86,7 +86,7 @@ class GPOP_OT_onion_peel_pyramid_fade(bpy.types.Operator):
 
     @classmethod
     def poll(cls, context):
-        return context.object and context.object.type == 'GPENCIL'
+        return context.object and context.object.type == 'GREASEPENCIL'
 
     def invoke(self, context, event):
         self.shift = event.shift
@@ -117,8 +117,8 @@ class GPOP_OT_onion_peel_pyramid_fade(bpy.types.Operator):
             scol[abs(i)].opacity = opacity
             return
 
-        restore = [m for m in peel.grease_pencil_modifiers
-            if m.type == 'GP_OPACITY' and m.factor == 0]
+        restore = [m for m in peel.modifiers
+            if m.type == 'GREASE_PENCIL_OPACITY' and m.factor == 0]
 
         # setattr(self.settings, pid, opacity) # trigger modification through update
         scol[abs(i)].opacity = opacity
@@ -199,7 +199,7 @@ class GPOP_OT_onion_peel_tranform(bpy.types.Operator):
 
     @classmethod
     def poll(cls, context):
-        return context.object and context.object.type == 'GPENCIL'
+        return context.object and context.object.type == 'GREASEPENCIL'
     
     tab_press_ct = 0
     peel_num : bpy.props.IntProperty()
@@ -213,13 +213,12 @@ class GPOP_OT_onion_peel_tranform(bpy.types.Operator):
     def geometry_to_origin(self, ob, world=False):
         bbox_center = self.get_bbox_center(ob, world)
         for l in ob.data.layers:
-            for s in l.active_frame.strokes:
+            for s in l.current_frame().drawing.strokes:
                 coords = np.zeros(len(s.points)*3)
                 s.points.foreach_get('co', coords)
                 coords = coords.reshape((len(s.points), 3))
                 coords -= bbox_center
                 s.points.foreach_set('co', coords.flatten())
-                # s.points.update() # not working on all version, use point hack
                 s.points.add(1)
                 s.points.pop()
 
@@ -437,7 +436,7 @@ class GPOP_OT_copy_peel_transform(bpy.types.Operator):
 
     @classmethod
     def poll(cls, context):
-        return context.object and context.object.type == 'GPENCIL'
+        return context.object and context.object.type == 'GREASEPENCIL'
 
     src : bpy.props.StringProperty()
     dest : bpy.props.StringProperty()
@@ -465,7 +464,7 @@ class GPOP_OT_onion_reset_peel_transform(bpy.types.Operator):
 
     @classmethod
     def poll(cls, context):
-        return context.object and context.object.type == 'GPENCIL'
+        return context.object and context.object.type == 'GREASEPENCIL'
 
     peel_num : bpy.props.IntProperty()
 
@@ -499,7 +498,7 @@ class GPOP_OT_onion_swap_xray(bpy.types.Operator):
 
     @classmethod
     def poll(cls, context):
-        return context.object and context.object.type == 'GPENCIL'
+        return context.object and context.object.type == 'GREASEPENCIL'
     
     def invoke(self, context, event):
         self.peel_only = event.shift

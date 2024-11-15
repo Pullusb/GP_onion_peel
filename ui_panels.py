@@ -7,7 +7,7 @@ class GPOP_PT_onion_skinning_ui(bpy.types.Panel):
 
     def draw(self, context):
         ob = context.object
-        if not ob or ob.type != 'GPENCIL':
+        if not ob or ob.type != 'GREASEPENCIL':
             return
         settings = context.scene.gp_ons_setting
         layout = self.layout
