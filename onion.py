@@ -3,6 +3,7 @@ from bpy.app.handlers import persistent
 from time import time
 from mathutils import Matrix, Vector
 import random
+import numpy as np
 from . import preferences
 
 def to_onion_name(name):
@@ -230,6 +231,50 @@ def set_layer_opacity_by_mod(mods, layer_name, value):
     mod_opa.layer = layer_name
     mod_opa.show_expanded = True
 
+def bulk_copy_attributes(source_attr, target_attr):
+    # Get the data as flat numpy array based on attribute type and domain
+    if source_attr.domain == 'POINT':
+        if source_attr.data_type == 'FLOAT':
+            data = np.empty(len(source_attr.data), dtype=np.float32)
+            source_attr.data.foreach_get('value', data)
+            target_attr.data.foreach_set('value', data)
+        elif source_attr.data_type == 'FLOAT_VECTOR':
+            data = np.empty(len(source_attr.data) * 3, dtype=np.float32)
+            source_attr.data.foreach_get('vector', data)
+            target_attr.data.foreach_set('vector', data)
+    elif source_attr.domain == 'CURVE':
+        if source_attr.data_type == 'INT':
+            data = np.empty(len(source_attr.data), dtype=np.int32)
+            source_attr.data.foreach_get('value', data)
+            target_attr.data.foreach_set('value', data)
+        elif source_attr.data_type == 'INT8':
+            data = np.empty(len(source_attr.data), dtype=np.int8)
+            source_attr.data.foreach_get('value', data)
+            target_attr.data.foreach_set('value', data)
+        elif source_attr.data_type == 'BOOLEAN':
+            data = np.empty(len(source_attr.data), dtype=np.bool_)
+            source_attr.data.foreach_get('value', data)
+            target_attr.data.foreach_set('value', data)
+
+def copy_frame_at(source_frame, layer, frame_number):
+    '''Copy a frame to another frame'''
+    source_drawing = source_frame.drawing
+
+    frame = layer.frames.new(frame_number)
+    dr = frame.drawing
+    dr.add_strokes([len(s.points) for s in source_drawing.strokes])
+    # layer.frames.update()
+    for attr_name in source_drawing.attributes.keys():
+        source_attr = source_drawing.attributes[attr_name]
+        if attr_name not in dr.attributes:
+            dr.attributes.new(name=attr_name, type=source_attr.data_type, domain=source_attr.domain)
+        target_attr = dr.attributes[attr_name]
+        bulk_copy_attributes(source_attr, target_attr)
+    
+    ## Zip method to copy one by one
+    # for i, j in zip(range(source_drawing.curve_offset[0].value, source_drawing.curve_offset[-1].value), dr.curve_offset[0].value, dr.curve_offset[-1].value):
+    #     for attr
+
 ###
 ### MAIN FUNCTION (called on each frame change or when onion rebuild is needed)
 ###
@@ -279,13 +324,13 @@ def update_onion(self, context):
     op_col, peel_col = create_peel_col(bpy.context)
 
     ## create/assign a dummy (try resolve crash edit stroke > change frame > using ctrl-Z)
-    dummy = bpy.data.grease_pencils.get('.dummy')
+    dummy = bpy.data.grease_pencils_v3.get('.dummy') # FIXME
     if not dummy:
-        dummy = bpy.data.grease_pencils.new('.dummy')
+        dummy = bpy.data.grease_pencils_v3.new('.dummy')
     for o in reversed(peel_col.all_objects):
         old = o.data
         o.data = dummy # no need to delete old data, "garbage collected" at update end
-        bpy.data.grease_pencils.remove(old)
+        bpy.data.grease_pencils_v3.remove(old)
 
     op_col.hide_viewport = False
 
@@ -382,8 +427,10 @@ def update_onion(self, context):
                 continue
 
             nl = data.layers.new(info)
-            f = nl.frames.copy(mark) # FIXME: gpv3: can only copy a frame from the same layer
-            f.frame_number = cur_frame
+            # f = nl.frames.copy(mark) # FIXME: gpv3: can only copy a frame from the same layer
+            # f = nl.frames.new(cur_frame) # create here or in function ?
+            f = copy_frame_at(mark, nl, cur_frame)
+            # f.frame_number = cur_frame
             nl.use_lights = False
             nl.opacity = fsetting.opacity / 100 * opacity_factor
             # COLOR
