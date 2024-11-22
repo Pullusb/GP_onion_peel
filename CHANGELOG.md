@@ -1,5 +1,11 @@
 # Changelog
 
+2.0.0
+
+- changed: Version for Blender 4.3+ under Grease pencil version 3:
+  - Break compatibility with previous blender version
+  - Peels are not colored in `Solid` shading view (warning shows in UI if Solid view is active)
+
 1.0.1
 
 - fixed: Disable native onion skin with `Enabled` toggle (previously done only with `Refresh` button)
