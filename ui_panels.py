@@ -21,7 +21,8 @@ class GPOP_PT_onion_skinning_ui(bpy.types.Panel):
             layout.label(text='ENTER / B : Valid')
             layout.label(text='ESC : Cancel')
             layout.label(text='G/R/S : Transform')
-            layout.label(text='X : horizontal flip (Shift X : vertical)')
+            layout.label(text='X : horizontal flip')
+            layout.label(text='Shift X : vertical flip')
             layout.label(text='- - -')
             return
 

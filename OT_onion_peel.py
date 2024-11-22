@@ -154,32 +154,21 @@ def draw_callback_2d(self, context):
     # green -> (0.06, 0.4, 0.040, 0.6)
     # orange -> (0.45, 0.18, 0.03, 1.0)
     osd_color = (0.06, 0.4, 0.040, 0.75)
-    if bpy.app.version < (3,6,0):
-        import bgl
-        bgl.glLineWidth(10)
-        self.shader_2d.bind()
-        self.shader_2d.uniform_float("color", osd_color)
-        self.screen_framing.draw(self.shader_2d)
-        # Reset
-        bgl.glLineWidth(1)
-    else:
-        gpu.state.line_width_set(10.0)
-        self.shader_2d.bind()
-        self.shader_2d.uniform_float("color", osd_color)
-        self.screen_framing.draw(self.shader_2d)
-        # Reset
-        gpu.state.line_width_set(1.0)
+    gpu.state.line_width_set(10.0)
+    self.shader_2d.bind()
+    self.shader_2d.uniform_float("color", osd_color)
+    self.screen_framing.draw(self.shader_2d)
+    
+    # Reset
+    gpu.state.line_width_set(1.0)
 
     # Display Text
     if self.use_osd_text:
         font_id = 0
-        dpi = context.preferences.system.dpi
+
         blf.color(font_id, *osd_color) # unpack color
         blf.position(font_id, context.region.width / 3, 15, 0)
-        if bpy.app.version < (4,0,0):
-            blf.size(font_id, 16, dpi)
-        else:
-            blf.size(font_id, 16)
+        blf.size(font_id, 16)
         blf.draw(font_id, f'Peel transform mode : G / R / S / X')
         
         if not isclose(self.scale_offset[0], 1.0, rel_tol=0.0001):
@@ -190,7 +179,38 @@ def draw_callback_2d(self, context):
             #     scale_text = [f'{i:.2f}' for i in self.scale_offset]
             # blf.draw(font_id, f'Scale Factor: {scale_text}')
             blf.draw(font_id, f'Scale Factor: {self.scale_offset[0]:.3f}')
-            
+
+def get_area_limits(context):
+    '''return a limits : left, bottom, right, top
+    '''
+    area = context.area
+    w, h = area.width, area.height
+    # if not bpy.context.preferences.system.use_region_overlap:
+    #     return w, h
+
+    regions = area.regions
+    header = next((r for r in regions if r.type == 'HEADER'), None)
+    tool_header = next((r for r in regions if r.type == 'TOOL_HEADER'), None)
+    asset_shelf = next((r for r in regions if r.type == 'ASSET_SHELF'), None)
+    toolbar = next((r for r in regions if r.type == 'TOOLS'), None)
+    sidebar = next((r for r in regions if r.type == 'UI'), None)
+
+    bottom_margin = 0
+    up_margin = 0
+    if header.alignment == 'BOTTOM':
+        bottom_margin += header.height
+    else:
+        up_margin += header.height
+
+    if tool_header.alignment == 'BOTTOM':
+        bottom_margin += tool_header.height
+    else:
+        up_margin += tool_header.height
+
+    if asset_shelf.height > 1:
+        bottom_margin += asset_shelf.height
+
+    return toolbar.width, bottom_margin, w - sidebar.width, h - up_margin - 1 
 
 class GPOP_OT_onion_peel_tranform(bpy.types.Operator):
     bl_idname = "gp.onion_peel_tranform"
@@ -328,17 +348,17 @@ class GPOP_OT_onion_peel_tranform(bpy.types.Operator):
         w = r.width
         h = r.height
 
-        if bpy.app.version < (4,0,0):
-            self.shader_2d = gpu.shader.from_builtin('2D_UNIFORM_COLOR')
-            self.screen_framing = batch_for_shader(
-            self.shader_2d, 'LINE_LOOP', {"pos": [(0,0), (0,h), (w,h), (w,0)]})
-        else:
-            self.shader_2d = gpu.shader.from_builtin('POLYLINE_UNIFORM_COLOR')
-            self.screen_framing = batch_for_shader(
-            self.shader_2d, 'LINES', {"pos": [(0,0), (0,h), (w,h), (w,0)]},
-                                      indices=[(0,1),(1,2),(2,3),(3,0)])
+        _left, bottom, _right, top = get_area_limits(context)
+        sidebar_width = next((r.width for r in context.area.regions if r.type == 'UI'), 1)
+        if sidebar_width > 1:
+            w -= 22 * context.preferences.system.ui_scale
 
-            #   "indices": [0,1,1,2,2,3,3,0]})
+        self.shader_2d = gpu.shader.from_builtin('UNIFORM_COLOR')
+        self.screen_framing = batch_for_shader(
+            self.shader_2d, 'LINES', {"pos": [(0, bottom), (0, top), (w, top), (w, bottom)]},
+                                        indices=[(0,1),(1,2),(2,3),(3,0)])
+
+        #   "indices": [0,1,1,2,2,3,3,0]})
         
         ## OpenGL handler
         self._draw_area = context.area
@@ -390,7 +410,7 @@ class GPOP_OT_onion_peel_tranform(bpy.types.Operator):
 
     def modal(self, context, event):
         self.scale_offset = self.get_offset_matrix().to_scale()
-        context.area.header_text_set(f'Pick onion peel - use G:move / R:rotate / S:scale / X,M:mirror')
+        context.area.header_text_set(f'Pick onion peel - use G:move / R:rotate / S:scale - Esc:cancel - Enter:valid')
         if context.view_layer.objects.active != self.peel:
             self.report({'WARNING'}, "Only selected peel must be moved before pressing ENTER")
             tmp = context.view_layer.objects.active
