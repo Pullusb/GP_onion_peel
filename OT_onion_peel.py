@@ -213,14 +213,17 @@ class GPOP_OT_onion_peel_tranform(bpy.types.Operator):
     def geometry_to_origin(self, ob, world=False):
         bbox_center = self.get_bbox_center(ob, world)
         for l in ob.data.layers:
-            for s in l.current_frame().drawing.strokes:
-                coords = np.zeros(len(s.points)*3)
-                s.points.foreach_get('co', coords)
-                coords = coords.reshape((len(s.points), 3))
-                coords -= bbox_center
-                s.points.foreach_set('co', coords.flatten())
-                s.points.add(1)
-                s.points.pop()
+            dr = l.current_frame().drawing
+            ## Substract bbox center on all positions attribute at once
+            num_points = dr.attributes.domain_size('POINT')
+            positions_data = np.zeros((num_points, 3), dtype=np.float32)
+            
+            ## np.ravel pass as flat array without changing original shape
+            dr.attributes['position'].data.foreach_get('vector', np.ravel(positions_data))
+            ## Apply offset
+            positions_data -= bbox_center
+            ## Write in position attribute
+            dr.attributes['position'].data.foreach_set('vector', np.ravel(positions_data))
 
     def get_offset_matrix(self):
         source_mat = Matrix(self.peel['mat'])
