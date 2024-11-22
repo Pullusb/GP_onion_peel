@@ -12,7 +12,8 @@ from gpu_extras.batch import batch_for_shader
 class GPOP_OT_onion_skin_delete(bpy.types.Operator):
     bl_idname = "gp.onion_peel_delete"
     bl_label = "Delete Onion_Skin"
-    bl_description = "Delete Onion Peels\nShift + clic to delete all peels"
+    bl_description = "Delete Onion Peels\
+        \nShift + clic to delete all peels"
     bl_options = {"REGISTER", "UNDO"}
 
     @classmethod
@@ -27,10 +28,11 @@ class GPOP_OT_onion_skin_delete(bpy.types.Operator):
         context.scene.gp_ons_setting.activated = False
         if self.on_all:
             onion.clear_peels(full_clear=True)
+            # onion.clear_all_peel_materials(full_clear=True) # peel_mat
             return {"FINISHED"}
 
         onion.clear_current_peel(context.object)
-
+        # onion.clear_all_peel_materials() # peel_mat
         return {"FINISHED"}
 
 class GPOP_OT_onion_skin_refresh(bpy.types.Operator):

@@ -99,6 +99,11 @@ class GPOP_PT_onion_skinning_ui(bpy.types.Panel):
             # pid = f'p{abs(i)}' if i < 0 else f'n{i}'
             row.prop(fsetting, 'opacity', text='', slider=True)
             row.prop(fsetting, 'visibility', text='', icon='HIDE_OFF')
+        
+        if context.space_data.shading.type == 'SOLID':
+            layout.separator()
+            layout.label(text='Peels not colored in Solid view', icon='INFO')
+            # layout.label(text='Switch to Material or Rendered mode')
 
 ### --- REGISTER ---
 

@@ -346,10 +346,13 @@ def update_onion(self, context):
     for _ in range(gnext - len(settings.pos_frames) + 1):
         f = settings.pos_frames.add()
 
+    # if not bpy.data.materials.get('.onion_peel_prev_stroke'): # peel_mat
+    #     create_all_peel_materials() # peel_mat
+
     peel = None
     used = []
     layers = []
-    
+
     ## calculate all frame index by layer once      
     for l in gpl:
         if not l.use_onion_skinning or l.hide:
@@ -385,9 +388,22 @@ def update_onion(self, context):
 
         data = bpy.data.grease_pencils_v3.new(peel_name)
         # data.pixel_factor = ob.data.pixel_factor # gpv2
-        ## get same material stack
+        
+        ## Get same material stack (gpv3: Tint color do not show in Solid view)
         for i, m in enumerate(ob.data.materials):
             data.materials.append(m)
+        ## peel_mat : Create colored materal stack
+        # for i, m in enumerate(ob.data.materials):
+        #     if not m: # Replicate empty slot 
+        #         data.materials.append(m)
+        #         continue
+        #     if m.grease_pencil.show_stroke and m.grease_pencil.show_fill:
+        #         mat = bpy.data.materials.get(f'.onion_peel_prev_stroke_fill' if num < 0 else '.onion_peel_next_stroke_fill')
+        #     elif m.grease_pencil.show_stroke:
+        #         mat = bpy.data.materials.get(f'.onion_peel_prev_stroke' if num < 0 else '.onion_peel_next_stroke')
+        #     elif m.grease_pencil.show_fill:
+        #         mat = bpy.data.materials.get(f'.onion_peel_prev_fill' if num < 0 else '.onion_peel_next_fill')
+        #     data.materials.append(mat)
 
         if not peel:
             peel = bpy.data.objects.new(peel_name, data)
@@ -530,6 +546,20 @@ def update_peel_color(self, context):
         for l in o.data.layers:
             l.tint_color = color
 
+    # peel_mat : Set material color
+    # base_names = [".onion_peel_prev", ".onion_peel_next"]
+    # variations = ["_stroke", "_fill", "_stroke_fill"]
+    # for base in base_names:
+    #     for var in variations:
+    #         mat_name = base + var
+    #         if mat := bpy.data.materials.get(mat_name):
+    #             if base == ".onion_peel_prev":
+    #                 color = (*settings.before_color, 1.0)
+    #             else:
+    #                 color = (*settings.after_color, 1.0)
+    #             mat.grease_pencil.color = color
+    #             mat.grease_pencil.fill_color = color
+
 # not used, ops used instead
 def update_peel_xray(self, context):
     settings = context.scene.gp_ons_setting
@@ -542,6 +572,67 @@ def update_peel_xray(self, context):
     context.object.show_in_front = settings.xray
     for peel in peel_col.objects:
         peel.show_in_front = settings.xray
+
+# / peel_mat : unused for now (wont work well with texture based material)
+"""
+## Use material to show in Solid view... ?
+## To use by batch assigning material index on either 0,1,3 (apply material index to mask)
+# def set_peel_material_stack(data, prev=False):
+#     '''set material stack to prev onion peel'''
+#     if prev:
+#         base = ".onion_peel_prev"
+#     else:
+#         base = ".onion_peel_next"
+#     for variation in ["_stroke", "_fill", "_stroke_fill"]:
+#         mat = bpy.data.materials.get(base + variation)
+#         if not mat:
+#             # create material if not exist
+#             mat = bpy.data.materials.new(name=base + variation)
+#             bpy.data.materials.create_gpencil_data(mat)
+#             mat.grease_pencil.show_stroke = variation in ["_stroke", "_stroke_fill"]
+#             mat.grease_pencil.show_fill = variation in ["_fill", "_stroke_fill"]
+            
+#             onp_setting = bpy.context.scene.gp_ons_setting
+#             if prev:
+#                 mat.grease_pencil.color = mat.grease_pencil.fill_color = onp_setting.before_color
+#             else:
+#                 mat.grease_pencil.color = mat.grease_pencil.fill_color = onp_setting.after_color
+
+#         data.materials.append(mat)
+
+def create_all_peel_materials():
+    '''Create 6 materials for onion peels (3 prev and 3 next)'''
+    base_names = [".onion_peel_prev", ".onion_peel_next"]
+    variations = ["_stroke", "_fill", "_stroke_fill"]
+    for base in base_names:
+        for var in variations:
+            mat_name = base + var
+            mat = bpy.data.materials.get(mat_name)
+            if not mat:
+                mat = bpy.data.materials.new(name=mat_name)
+                bpy.data.materials.create_gpencil_data(mat)
+                mat.grease_pencil.show_stroke = var in ["_stroke", "_stroke_fill"]
+                mat.grease_pencil.show_fill = var in ["_fill", "_stroke_fill"]
+                if base == ".onion_peel_prev":
+                    color = (*bpy.context.scene.gp_ons_setting.before_color, 1.0)
+                else:
+                    color = (*bpy.context.scene.gp_ons_setting.after_color, 1.0)
+                mat.grease_pencil.color = color
+                mat.grease_pencil.fill_color = color
+
+def clear_all_peel_materials(full_clear=False):
+    '''Remove 6 onion peels materials'''
+    base_names = [".onion_peel_prev", ".onion_peel_next"]
+    variations = ["_stroke", "_fill", "_stroke_fill"]
+    for base in base_names:
+        for var in variations:
+            mat_name = base + var
+            if mat := bpy.data.materials.get(mat_name):
+                if mat.users and not full_clear:
+                    continue
+                bpy.data.materials.remove(mat)
+# peel_mat /
+"""
 
 '''
 ## Experimental
