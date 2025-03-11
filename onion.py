@@ -285,6 +285,8 @@ def force_update_onion(self, context):
 
 @persistent
 def update_onion(self, context):
+    if not hasattr(bpy.context, 'object'):
+        return
     ob = bpy.context.object
     if not ob or ob.type != 'GREASEPENCIL' or ob.name.startswith('.peel'):
         return

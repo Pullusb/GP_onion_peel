@@ -1,5 +1,9 @@
 # Changelog
 
+2.0.1
+
+- fixed: non-blocking error in console when handler is called in the wrong context
+
 2.0.0
 
 - changed: Version for Blender 4.3+ under Grease pencil version 3:
