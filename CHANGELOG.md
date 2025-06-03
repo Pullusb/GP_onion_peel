@@ -1,5 +1,9 @@
 # Changelog
 
+2.0.2
+
+- fixed: crash on Blender 4.4
+
 2.0.1
 
 - fixed: non-blocking error in console when handler is called in the wrong context

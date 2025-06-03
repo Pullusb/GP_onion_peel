@@ -256,12 +256,25 @@ def bulk_copy_attributes(source_attr, target_attr):
     ## Note: COLOR_VECTOR not needed in this case
 
 def copy_frame_at(source_frame, layer, frame_number):
-    '''Copy a frame to another frame'''
+    """
+    Copy a frame to another frame within a specified layer at frame numer
+
+    Args:
+        source_frame (Frame): The source frame object containing the drawing to be copied.
+        layer (Layer): The target layer where the new frame will be created.
+        frame_number (int): The frame number at which the new frame will be created.
+    """
     source_drawing = source_frame.drawing
 
     frame = layer.frames.new(frame_number)
+    if not len(source_drawing.strokes):
+        return
+
     dr = frame.drawing
+    ## Add all strokes at once with list of point numbers
     dr.add_strokes([len(s.points) for s in source_drawing.strokes])
+
+    ## Transfer attributes
     for attr_name in source_drawing.attributes.keys():
         ## Skip non-needed attributes (since it's colored, remove vertex and fill color as well)
         if attr_name in ('vertex_color', 'fill_color', '.selection', 'init_time', 'delta_time'):
@@ -442,6 +455,7 @@ def update_onion(self, context):
                 continue
 
             nl = data.layers.new(info)
+            print(mark, nl, cur_frame)
             f = copy_frame_at(mark, nl, cur_frame)
             nl.use_lights = False
             nl.opacity = fsetting.opacity / 100 * opacity_factor
