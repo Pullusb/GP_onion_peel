@@ -336,13 +336,13 @@ def update_onion(self, context):
     op_col, peel_col = create_peel_col(bpy.context)
 
     ## create/assign a dummy (try resolve crash edit stroke > change frame > using ctrl-Z)
-    dummy = bpy.data.grease_pencils_v3.get('.dummy') # FIXME
+    dummy = bpy.data.grease_pencils.get('.dummy')
     if not dummy:
-        dummy = bpy.data.grease_pencils_v3.new('.dummy')
+        dummy = bpy.data.grease_pencils.new('.dummy')
     for o in reversed(peel_col.all_objects):
         old = o.data
         o.data = dummy # no need to delete old data, "garbage collected" at update end
-        bpy.data.grease_pencils_v3.remove(old)
+        bpy.data.grease_pencils.remove(old)
 
     op_col.hide_viewport = False
 
@@ -401,7 +401,7 @@ def update_onion(self, context):
         peel_name = f'{peelname} {num}'
         peel = op_col.all_objects.get(peel_name)
 
-        data = bpy.data.grease_pencils_v3.new(peel_name)
+        data = bpy.data.grease_pencils.new(peel_name)
         # data.pixel_factor = ob.data.pixel_factor # gpv2
         
         ## Get same material stack (gpv3: Tint color do not show in Solid view)
@@ -455,7 +455,7 @@ def update_onion(self, context):
                 continue
 
             nl = data.layers.new(info)
-            print(mark, nl, cur_frame)
+            # print(mark, nl, cur_frame)
             f = copy_frame_at(mark, nl, cur_frame)
             nl.use_lights = False
             nl.opacity = fsetting.opacity / 100 * opacity_factor
