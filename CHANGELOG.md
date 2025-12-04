@@ -1,5 +1,9 @@
 # Changelog
 
+3.0.0
+
+- changed: version for Blender 5.0+
+
 2.0.2
 
 - fixed: crash on Blender 4.4

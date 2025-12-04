@@ -248,7 +248,7 @@ class GPOP_OT_onion_peel_tranform(bpy.types.Operator):
             dr.attributes['position'].data.foreach_set('vector', np.ravel(positions_data))
 
     def get_offset_matrix(self):
-        source_mat = Matrix(self.peel['mat'])
+        source_mat = onion.flat_to_matrix(self.peel['mat'])
         ## Get offset matrix
         mat = self.peel.matrix_world @ (self.geo_org_matrix.inverted() @ source_mat)
         ## Apply offset from original object  (cancel it, will be applyed at exit refresh)
@@ -309,9 +309,9 @@ class GPOP_OT_onion_peel_tranform(bpy.types.Operator):
         self.org_matrix = peel.matrix_world.copy()
 
         self.gp_last_mode = context.mode
-        
+
         # Reset the object matrix without depth offset
-        self.peel.matrix_world = Matrix(self.peel['mat'])
+        self.peel.matrix_world = onion.flat_to_matrix(self.peel['mat'])
 
         self.init_frame = context.scene.frame_current
         self.scale_offset = (1.0, 1.0, 1.0)
@@ -405,7 +405,7 @@ class GPOP_OT_onion_peel_tranform(bpy.types.Operator):
 
     def back_to_object(self, context):
         mat = self.get_offset_matrix()
-        self.peel['outapeg'] = mat.copy()
+        self.peel['outapeg'] = onion.matrix_to_flat(mat)
         self.exit(context)
 
     def modal(self, context, event):

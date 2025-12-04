@@ -4,8 +4,8 @@ bl_info = {
     "name": "GP Onion Peel",
     "description": "Custom Onion skinning using refreshed GP duplications",
     "author": "Samuel Bernou",
-    "version": (2, 0, 2),
-    "blender": (4, 3, 0),
+    "version": (3, 0, 0),
+    "blender": (5, 0, 0),
     "location": "View3D",
     "doc_url": "https://pullusb.gumroad.com/l/gp_onion_peel",
     "category": "Object" }
@@ -43,8 +43,8 @@ def delete_onion(dummy):
         outapeg = o.get('outapeg')
         if not outapeg:
             continue
-        outapeg = [v.to_list() for v in outapeg]
-        transfo_list.append([o.name, outapeg])
+        # outapeg is already a flattened array in Blender 5.0+
+        transfo_list.append([o.name, list(outapeg)])
     if transfo_list:
         bpy.types.ViewLayer.onion_custom_transform = transfo_list
     bpy.types.ViewLayer.onion_was_active = bpy.context.scene.gp_ons_setting.activated

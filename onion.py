@@ -12,6 +12,14 @@ def to_onion_name(name):
 def to_peel_name(name):
     return f'.peel_{name}'
 
+def matrix_to_flat(matrix):
+    """Convert a 4x4 Matrix to a flattened tuple for custom property storage"""
+    return tuple(sum((list(row) for row in matrix), []))
+
+def flat_to_matrix(flat):
+    """Reconstruct a 4x4 Matrix from a flattened array stored in custom properties"""
+    return Matrix([flat[i:i+4] for i in range(0, 16, 4)])
+
 def clear_native_overlay():
     if bpy.context.area.type == 'VIEW_3D':
         bpy.context.space_data.overlay.use_gpencil_onion_skin = False
@@ -478,14 +486,14 @@ def update_onion(self, context):
         ## assigning world matrix:
         outapeg_mat = Matrix()
         if peel.get('outapeg'):
-            outapeg_mat = Matrix(peel['outapeg'])
+            outapeg_mat = flat_to_matrix(peel['outapeg'])
 
         if settings.world_space and mark: 
             context.scene.frame_set(mark)
 
         ## diff matrix at time of modification
         mat = ob.matrix_world @ outapeg_mat
-        peel['mat'] = mat
+        peel['mat'] = matrix_to_flat(mat)
         count += depth_offset # settings.depth_offset
         mat = get_new_matrix_with_offset(mat, offset=count)
         peel.matrix_world = mat
