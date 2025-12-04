@@ -4,7 +4,9 @@ Blender grease pencil addon to add a custom onion skinning
 
 **[Get it on Gumroad](https://pullusb.gumroad.com/l/gp_onion_peel)**
 
-**[Download latest from Github (Blender 4.3+)](https://github.com/Pullusb/GP_onion_peel/archive/main.zip)**
+**[Download latest from Github (Blender 5+)](https://github.com/Pullusb/GP_onion_peel/archive/main.zip)**
+
+**[Download for Blender 4.3+ to 4.5](https://github.com/Pullusb/GP_onion_peel/releases/download/2.0.2/GP_onion_peel-v2_0_2-blender_4_3-to_4_5.zip)** 
 
 **[Download for Blender 4.2 and below](https://github.com/Pullusb/GP_onion_peel/releases/download/v1.0.1/GP_onion_peel.zip)**
 
