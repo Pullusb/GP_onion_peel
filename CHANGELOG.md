@@ -1,5 +1,9 @@
 # Changelog
 
+3.0.1
+
+- fixed: Error when finalizing peel transform after launching from edit mode
+
 3.0.0
 
 - changed: version for Blender 5.0+

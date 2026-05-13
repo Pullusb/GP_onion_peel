@@ -309,6 +309,9 @@ class GPOP_OT_onion_peel_tranform(bpy.types.Operator):
         self.org_matrix = peel.matrix_world.copy()
 
         self.gp_last_mode = context.mode
+        # In edit mode, context.mode is  EDIT_GREASE_PENCIL, but ops to switch use name "EDIT"
+        if 'EDIT' in self.gp_last_mode:
+            self.gp_last_mode = 'EDIT'
 
         # Reset the object matrix without depth offset
         self.peel.matrix_world = onion.flat_to_matrix(self.peel['mat'])
@@ -386,6 +389,7 @@ class GPOP_OT_onion_peel_tranform(bpy.types.Operator):
         self.peel.select_set(False)
         # restore mode
         context.area.header_text_set(None)
+
         bpy.ops.object.mode_set(mode=self.gp_last_mode)
 
         # restore selection
