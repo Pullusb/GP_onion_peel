@@ -1,13 +1,13 @@
-from .preferences import get_addon_prefs
 import bpy
-from . import onion
-from math import pi, isclose
-import numpy as np
-from mathutils import Matrix, Vector
 import gpu
 import blf
+import numpy as np
+from math import pi, isclose
+from mathutils import Matrix, Vector
 from gpu_extras.batch import batch_for_shader
-
+from .preferences import get_addon_prefs
+from . import onion
+from . import fn
 
 class GPOP_OT_onion_skin_delete(bpy.types.Operator):
     bl_idname = "gp.onion_peel_delete"
@@ -169,7 +169,7 @@ def draw_callback_2d(self, context):
         blf.color(font_id, *osd_color) # unpack color
         blf.position(font_id, context.region.width / 3, 15, 0)
         blf.size(font_id, 16)
-        blf.draw(font_id, f'Peel transform mode : G / R / S / X')
+        blf.draw(font_id, f'Peel transform mode : {" / ".join(self.allowed_keys)} / X')
         
         if not isclose(self.scale_offset[0], 1.0, rel_tol=0.0001):
             blf.position(font_id, context.region.width / 3, 45, 0)
@@ -299,6 +299,28 @@ class GPOP_OT_onion_peel_tranform(bpy.types.Operator):
                 return {"CANCELLED"}
             return context.window_manager.invoke_props_dialog(self) # , width=popup_width
 
+        ### Fetch allowed transform keys during modal (for "industry standard" and custom keymaps)
+        self.allowed_keys = []
+        ## classic transform:
+        if ki := fn.get_keyconfig_item('transform.translate', catname='Object Mode'):
+            self.allowed_keys.append(ki.type)
+        if ki := fn.get_keyconfig_item('transform.rotate', catname='Object Mode'):
+            self.allowed_keys.append(ki.type)
+        if ki := fn.get_keyconfig_item('transform.resize', catname='Object Mode'):
+            self.allowed_keys.append(ki.type)
+        ## Industry standard transforms:
+        if ki := fn.get_keyconfig_item('wm.tool_set_by_id', catname='Object Mode', properties={'name': 'builtin.move'}):
+            self.allowed_keys.append(ki.type)
+        if ki := fn.get_keyconfig_item('wm.tool_set_by_id', catname='Object Mode', properties={'name': 'builtin.rotate'}):
+            self.allowed_keys.append(ki.type)
+        if ki := fn.get_keyconfig_item('wm.tool_set_by_id', catname='Object Mode', properties={'name': 'builtin.scale'}):
+            self.allowed_keys.append(ki.type)
+        if ki := fn.get_keyconfig_item('wm.tool_set_by_id', catname='Object Mode', properties={'name': 'builtin.transform'}):
+            self.allowed_keys.append(ki.type)
+
+        if not self.allowed_keys:
+            self.allowed_keys = ['G', 'R', 'S'] # fallback to default keys
+
         context.scene.gp_ons_setting.frame_prev = -9999
         prefs = get_addon_prefs()
         self.use_osd_text = prefs.use_osd_text
@@ -414,7 +436,7 @@ class GPOP_OT_onion_peel_tranform(bpy.types.Operator):
 
     def modal(self, context, event):
         self.scale_offset = self.get_offset_matrix().to_scale()
-        context.area.header_text_set(f'Pick onion peel - use G:move / R:rotate / S:scale - Esc:cancel - Enter:valid')
+        context.area.header_text_set(f'Pick onion peel - use {", ".join(self.allowed_keys)} - Esc:cancel - Enter:valid')
         if context.view_layer.objects.active != self.peel:
             self.report({'WARNING'}, "Only selected peel must be moved before pressing ENTER")
             tmp = context.view_layer.objects.active
@@ -427,8 +449,8 @@ class GPOP_OT_onion_peel_tranform(bpy.types.Operator):
         if context.scene.frame_current != self.init_frame:
             context.scene.frame_current = self.init_frame
 
-        # lock everything except G R S clic
-        if event.type in {'G', 'R', 'S', 'LEFTMOUSE', 'RIGHTMOUSE', 'MIDDLEMOUSE', 'WHEELDOWNMOUSE', 'WHEELUPMOUSE'}:
+        # lock everything except allowed keys
+        if event.type in self.allowed_keys + ['LEFTMOUSE', 'RIGHTMOUSE', 'MIDDLEMOUSE', 'WHEELDOWNMOUSE', 'WHEELUPMOUSE', 'MOUSEMOVE', 'INBETWEEN_MOUSEMOVE']:
             return {'PASS_THROUGH'}
 
         if event.type in {'X', 'M'} and event.value == 'PRESS':

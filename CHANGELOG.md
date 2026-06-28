@@ -1,5 +1,11 @@
 # Changelog
 
+3.0.2
+
+- added: peel transform compatibility for "industry standard" keymap or custom keymaps
+    - in industry standard mode: Allow W,E,R,T for set tool by id instead of G,R,S
+    - Grab the binded transform keys, so even a custom keymap work
+
 3.0.1
 
 - fixed: Error when finalizing peel transform after launching from edit mode

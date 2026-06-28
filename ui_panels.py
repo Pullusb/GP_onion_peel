@@ -20,7 +20,11 @@ class GPOP_PT_onion_skinning_ui(bpy.types.Panel):
             layout.label(text='- Controls -')
             layout.label(text='ENTER / B : Valid')
             layout.label(text='ESC : Cancel')
-            layout.label(text='G/R/S : Transform')
+
+            if context.preferences.keymap.active_keyconfig.lower() == 'industry_compatible':
+                layout.label(text='W/E/R/T : Transform')
+            else:
+                layout.label(text='G/R/S : Transform')
             layout.label(text='X : horizontal flip')
             layout.label(text='Shift X : vertical flip')
             layout.label(text='- - -')
