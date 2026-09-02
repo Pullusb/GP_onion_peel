@@ -41,9 +41,9 @@ def get_collection_childs_recursive(col, cols=[]):
 
 
 def clear_peels(full_clear=False):
-    '''Clear all onion peels collection and object
+    """Clear all onion peels collection and object
     :full_clear: Clear .peels even if outside of onion peels collection
-    '''
+    """
     
     if full_clear:
         obj_pool = bpy.data.objects
@@ -124,7 +124,7 @@ def clear_custom_transform(all_peel=False):
                 del peel['outapeg']
 
 def get_keys(ob, evaluate_gp_obj_key=True):
-    '''Return sorted keys frame number of GP object'''
+    """Return sorted keys frame number of GP object"""
 
     position = []
     if evaluate_gp_obj_key:
@@ -177,25 +177,81 @@ def create_peel_col(context):
     
     return op_col, peel_col
 
-def clean_mods(gpob):
-    layer_list = [l.name for l in gpob.data.layers]
-    pgm = gpob.modifiers
-    for m in pgm:
-        if m.type not in ('GREASE_PENCIL_TIME', 'GREASE_PENCIL_OPACITY'):
+## Modifiers exclusion for peels
+EXCLUDED_MODIFIERS = {
+    'GREASE_PENCIL_TIME',    # incompatible with time remapping
+    'GREASE_PENCIL_BUILD',   # incompatible build
+    'LINEART',               
+    'GREASE_PENCIL_TINT',    # conflicts with tint color
+    'GREASE_PENCIL_COLOR',
+    'GREASE_PENCIL_OPACITY', # conflicts with the peel opacity
+}
+
+def copy_curve_mapping(source, target):
+    """Copy a CurveMapping (the 'custom_curve' of noise/thickness/smooth/hook modifiers)"""
+    for attr in ('tone', 'use_clip', 'clip_min_x', 'clip_min_y', 'clip_max_x', 'clip_max_y',
+                 'extend', 'black_level', 'white_level'):
+        setattr(target, attr, getattr(source, attr))
+
+    for scurve, tcurve in zip(source.curves, target.curves):
+        spoints, tpoints = scurve.points, tcurve.points
+
+        ## Trim down to the two extremities (a curve map cannot go under two points)
+        ## Note: always re-fetch tpoints[-1], removal reallocates the point array
+        for _ in range(len(tpoints) - 2):
+            tpoints.remove(tpoints[-1])
+
+        ## points.new() inserts sorted by X: set the two existing extremities first,
+        ## then insert the in-between points in ascending X order
+        tpoints[0].location = spoints[0].location
+        tpoints[-1].location = spoints[-1].location
+        for spoint in spoints[1:-1]:
+            tpoints.new(spoint.location[0], spoint.location[1])
+
+        for spoint, tpoint in zip(spoints, tpoints):
+            tpoint.location = spoint.location
+            tpoint.handle_type = spoint.handle_type
+
+    target.update()
+
+def copy_modifier(source_mod, target_ob):
+    """Create a copy of source_mod on target_ob, return it (None if type is excluded)"""
+    if source_mod.type in EXCLUDED_MODIFIERS:
+        return
+    target_mod = target_ob.modifiers.new(source_mod.name, source_mod.type)
+    for p in source_mod.bl_rna.properties:
+        if p.is_readonly or p.identifier in ('rna_type', 'type'):
             continue
-        if m.layer_filter not in layer_list:
-            pgm.remove(m)
+        try:
+            setattr(target_mod, p.identifier, getattr(source_mod, p.identifier))
+        except (AttributeError, TypeError, ValueError, RuntimeError):
+            pass
+    ## 'custom_curve' is a read-only pointer, so the loop above skipped it: copy it by hand
+    ## (noise, thickness, smooth, hook, opacity, tint and color modifiers have one)
+    if getattr(source_mod, 'custom_curve', None):
+        copy_curve_mapping(source_mod.custom_curve, target_mod.custom_curve)
+    return target_mod
+
+def transfer_modifiers(source_ob, target_ob):
+    """Rebuild target_ob modifier stack from source_ob, skipping EXCLUDED_MODIFIERS"""
+    clear_modifiers(target_ob)
+    for m in source_ob.modifiers:
+        copy_modifier(m, target_ob)
+
+def clear_modifiers(ob):
+    for m in reversed(ob.modifiers):
+        ob.modifiers.remove(m)
 
 def scale_matrix_from_vector(scale):
-    '''recreate a neutral mat scale'''
-    matscale_x = Matrix.Scale(scale[0], 4,(1,0,0))
-    matscale_y = Matrix.Scale(scale[1], 4,(0,1,0))
-    matscale_z = Matrix.Scale(scale[2], 4,(0,0,1))
+    """recreate a neutral mat scale"""
+    matscale_x = Matrix.Scale(scale[0], 4, (1,0,0))
+    matscale_y = Matrix.Scale(scale[1], 4, (0,1,0))
+    matscale_z = Matrix.Scale(scale[2], 4, (0,0,1))
     matscale = matscale_x @ matscale_y @ matscale_z
     return matscale
 
 def get_new_matrix_with_offset(matrix, offset=0.0001):
-    """return a copy of the matrix with applied offset and"""
+    """return a copy of the matrix with applied offset"""
 
     cam = bpy.context.scene.camera
     if not cam:
@@ -229,15 +285,6 @@ def get_new_matrix_with_offset(matrix, offset=0.0001):
 
     return mat
 
-
-def set_layer_opacity_by_mod(mods, layer_name, value):
-    mod_opa = mods.get(f'{layer_name}_opacity')
-    if not mod_opa:
-        mod_opa = mods.new(f'{layer_name}_opacity','GREASE_PENCIL_OPACITY')
-        mod_opa.normalize_opacity = True
-    mod_opa.factor = value
-    mod_opa.layer = layer_name
-    mod_opa.show_expanded = True
 
 def bulk_copy_attributes(source_attr, target_attr):
     # Get the data as flat numpy array based on attribute type and domain
@@ -358,6 +405,7 @@ def update_onion(self, context):
     
     depth_offset = preferences.get_addon_prefs().depth_offset
     depth_offset = depth_offset if not preferences.get_addon_prefs().peel_in_front else -depth_offset
+    use_transfer_mods = preferences.get_addon_prefs().transfer_modifiers
     cur_frame = scene.frame_current
     settings = scene.gp_ons_setting
     opacity_factor = settings.o_general / 100
@@ -438,6 +486,13 @@ def update_onion(self, context):
             peel.data = data
 
         peel.show_in_front = ob.show_in_front
+
+        # Replicate modifiers
+        if use_transfer_mods:
+            transfer_modifiers(ob, peel)
+        elif peel.modifiers:
+            clear_modifiers(peel)
+
         peel['index'] = num
         used.append(peel)
 
@@ -449,12 +504,12 @@ def update_onion(self, context):
             mark = None
             if num < 0:
                 fsetting = settings.neg_frames[abs(num)]
-                if absnum < len(previous)+1:   
+                if absnum < len(previous) + 1:   
                     mark = previous[num]
                     mark_prev.append(mark.frame_number)
             else:
                 fsetting = settings.pos_frames[num]
-                if absnum < len(following)+1:
+                if absnum < len(following) + 1:
                     mark = following[num-1]
                     mark_next.append(mark.frame_number)
 

@@ -29,6 +29,12 @@ class GPOP_addon_prefs(bpy.types.AddonPreferences):
         default=False,
         description='Show peel in front of the object instead of behind (can be usefull when doing fill color)')
 
+    transfer_modifiers : BoolProperty(name='Transfer Modifiers',
+        default=True,
+        description='Copy the source object modifier stack to the peels, so ghosts show the modified result\
+            \nTime Offset, Build, Line Art and color modifiers (Tint, Color, Opacity) are always excluded\
+            \nUse the Refresh button to apply the change to existing peels')
+
     use_default_color : BoolProperty(name='Use Default Color',
         description='Set these default color as onion skin when opening a blend')
 
@@ -56,6 +62,7 @@ class GPOP_addon_prefs(bpy.types.AddonPreferences):
             layout.label(text='If some peels opacity overlap others, try bigger offset value')
             layout.prop(self, 'depth_offset', text='Peel Depth Offset')
             layout.prop(self, 'peel_in_front', text='Peels In Front (only usefull when working with fills)')
+            layout.prop(self, 'transfer_modifiers', text='Replicate Modifier Stack')
 
             box = layout.box()
             col = box.column()

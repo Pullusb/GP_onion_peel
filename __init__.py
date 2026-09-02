@@ -89,8 +89,9 @@ def register():
     ui_panels.register()
 
     bpy.app.handlers.frame_change_post.append(onion.update_onion)
+    bpy.app.handlers.animation_playback_post.append(onion.update_onion) # otherwise not triggered when stopping.
     
-    ## wip triger on new key
+    ## wip trigger on new key
     # bpy.app.handlers.depsgraph_update_post.append(onion.trigger_on_key)
 
     bpy.app.handlers.save_pre.append(delete_onion)  
@@ -104,6 +105,7 @@ def unregister():
     bpy.app.handlers.save_post.remove(restore_onion)
 
     bpy.app.handlers.frame_change_post.remove(onion.update_onion)
+    bpy.app.handlers.animation_playback_post.remove(onion.update_onion)
     # bpy.app.handlers.depsgraph_update_post.remove(onion.trigger_on_key)
 
     ui_panels.unregister()
