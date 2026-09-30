@@ -1,5 +1,10 @@
 # Changelog
 
+3.1.0
+
+- added: GP modifier are transfered on the peel (possible to disable transfer in preferences)
+- fixed: Update peels on playback stop
+
 3.0.2
 
 - added: peel transform compatibility for "industry standard" keymap or custom keymaps
