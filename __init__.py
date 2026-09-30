@@ -4,7 +4,7 @@ bl_info = {
     "name": "GP Onion Peel",
     "description": "Custom Onion skinning using refreshed GP duplications",
     "author": "Samuel Bernou",
-    "version": (3, 1, 0),
+    "version": (4, 0, 0),
     "blender": (5, 0, 0),
     "location": "View3D",
     "doc_url": "https://pullusb.gumroad.com/l/gp_onion_peel",
@@ -75,6 +75,7 @@ def restore_onion(dummy):
 
 @persistent
 def load_onion(dummy):
+    onion._watch = None
     # restricted context during register so needed here.
     pref = preferences.get_addon_prefs()
     if pref.use_default_color:
@@ -90,9 +91,9 @@ def register():
 
     bpy.app.handlers.frame_change_post.append(onion.update_onion)
     bpy.app.handlers.animation_playback_post.append(onion.update_onion) # otherwise not triggered when stopping.
-    
-    ## wip trigger on new key
-    # bpy.app.handlers.depsgraph_update_post.append(onion.trigger_on_key)
+    bpy.app.handlers.depsgraph_update_post.append(onion.check_new_key) # key created without frame change (auto-key)
+    bpy.app.handlers.undo_post.append(onion.refresh_after_undo)
+    bpy.app.handlers.redo_post.append(onion.refresh_after_undo)
 
     bpy.app.handlers.save_pre.append(delete_onion)  
     bpy.app.handlers.save_post.append(restore_onion)
@@ -106,7 +107,9 @@ def unregister():
 
     bpy.app.handlers.frame_change_post.remove(onion.update_onion)
     bpy.app.handlers.animation_playback_post.remove(onion.update_onion)
-    # bpy.app.handlers.depsgraph_update_post.remove(onion.trigger_on_key)
+    bpy.app.handlers.depsgraph_update_post.remove(onion.check_new_key)
+    bpy.app.handlers.undo_post.remove(onion.refresh_after_undo)
+    bpy.app.handlers.redo_post.remove(onion.refresh_after_undo)
 
     ui_panels.unregister()
     OT_onion_peel.unregister()

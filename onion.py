@@ -6,6 +6,16 @@ import random
 import numpy as np
 from . import preferences
 
+## Held frames watched for new key creation without frame change (auto-key)
+## (ob_name, frame_number, [layer_names]) or None
+_watch = None
+
+## True while peels are being rebuilt (re-entrancy guard)
+_updating = False
+
+## True when an undo/redo needs a refresh, done at the next depsgraph update (see check_new_key)
+_undo_refresh = False
+
 def to_onion_name(name):
     return f'.onion_{name}'
 
@@ -99,7 +109,7 @@ def clean_peels():
     
     if not len(op_col.children):
         for ob in reversed(op_col.all_objects[:]): # reversed not needed ? ([:] create a copy)
-            if ob.name.startwith('.peel_'):
+            if ob.name.startswith('.peel_'):
                 bpy.data.objects.remove(ob)
         
         if not len(op_col.all_objects):
@@ -110,7 +120,7 @@ def clear_custom_transform(all_peel=False):
     if not op_col:
         return
     if all_peel:
-        pool = [c for c in op_col.children if c.name.startwith('.onion')]
+        pool = [c for c in op_col.children if c.name.startswith('.onion')]
     else:
         current_onion = op_col.children.get(f'.onion_{bpy.context.object.name}')
         if not current_onion:
@@ -152,16 +162,28 @@ def get_keys(ob, evaluate_gp_obj_key=True):
     return sorted(position)
 
 
+def get_layer_collection(layer_col, name):
+    """Return the layer collection with this name, searched recursively (None if not in view layer)"""
+    found = layer_col.children.get(name)
+    if found:
+        return found
+    for child in layer_col.children:
+        found = get_layer_collection(child, name)
+        if found:
+            return found
+
 def create_peel_col(context):
     # get/create onion skin collection
     op_col = bpy.data.collections.get('.onion_peels')
     if not op_col:
         op_col = bpy.data.collections.new('.onion_peels')
         op_col.hide_render = True
+
+    # ensure collection is linked in the scene (an undo can restore it unlinked) and visible in viewlayer
+    ons_vl = get_layer_collection(context.view_layer.layer_collection, op_col.name)
+    if not ons_vl:
         context.scene.collection.children.link(op_col)
-    
-    # ensure collection is visible in current viewlayer
-    ons_vl = context.view_layer.layer_collection.children['.onion_peels']
+        ons_vl = context.view_layer.layer_collection.children[op_col.name]
     ons_vl.exclude = False
 
     #-# create current objects peels collection if needed
@@ -173,8 +195,11 @@ def create_peel_col(context):
             peel_col = bpy.data.collections.new(colname)
         op_col.children.link(peel_col)
         peel_col.hide_render = True
-        ons_vl.children[colname].exclude = False
-    
+
+    peel_vl = ons_vl.children.get(colname)
+    if peel_vl:
+        peel_vl.exclude = False
+
     return op_col, peel_col
 
 ## Modifiers exclusion for peels
@@ -251,12 +276,12 @@ def scale_matrix_from_vector(scale):
     return matscale
 
 def get_new_matrix_with_offset(matrix, offset=0.0001):
-    """return a copy of the matrix with applied offset"""
+    """return a copy of the matrix with applied offset (unchanged copy if it cannot be computed)"""
 
     cam = bpy.context.scene.camera
     if not cam:
         # TODO check viewport view if in viewport if no cam
-        return
+        return matrix.copy()
     
     cam_loc = cam.matrix_world.translation
     mat = matrix.copy()
@@ -269,6 +294,8 @@ def get_new_matrix_with_offset(matrix, offset=0.0001):
         mat.translation += v * offset
     else:
         v = mat.translation - cam_loc
+        if not v.length:
+            return mat # object origin on the camera position: no depth direction
         new_loc = mat.translation + (v.normalized() * offset)
 
         # scale multiplied by lenth diff factor (recalculate length with new location)
@@ -322,12 +349,17 @@ def copy_frame_at(source_frame, layer, frame_number):
     source_drawing = source_frame.drawing
 
     frame = layer.frames.new(frame_number)
-    if not len(source_drawing.strokes):
+    ## curve_offsets: one start index per stroke + total point count (no per-stroke python wrappers)
+    offsets = np.empty(len(source_drawing.curve_offsets), dtype=np.int32)
+    source_drawing.curve_offsets.foreach_get('value', offsets)
+    ## Directly get offsets for later reuse, instead of old: if not len(source_drawing.strokes)
+    if len(offsets) < 2:
         return
 
     dr = frame.drawing
     ## Add all strokes at once with list of point numbers
-    dr.add_strokes([len(s.points) for s in source_drawing.strokes])
+    dr.add_strokes(np.diff(offsets).tolist())
+    # faster than: dr.add_strokes([len(s.points) for s in source_drawing.strokes])
 
     ## Transfer attributes
     for attr_name in source_drawing.attributes.keys():
@@ -353,21 +385,36 @@ def force_update_onion(self, context):
 
 @persistent
 def update_onion(self, context):
+    """Rebuild the peels (guarded against re-entrancy, e.g. the world space frame_set below
+    triggering frame_change_post)"""
+    global _updating
+    if _updating:
+        return
+    _updating = True
+    try:
+        build_peels(self, context)
+    finally:
+        _updating = False
+
+def build_peels(self, context):
+    global _watch
     if not hasattr(bpy.context, 'object'):
         return
     ob = bpy.context.object
     if not ob or ob.type != 'GREASEPENCIL' or ob.name.startswith('.peel'):
         return
-    
+
     scene = context.scene
 
     op_col = bpy.data.collections.get('.onion_peels')
     if not scene.gp_ons_setting.activated:
+        _watch = None
         if op_col:
             op_col.hide_viewport = True
         return
 
     if bpy.context.screen.is_animation_playing:
+        _watch = None
         if op_col:
             op_col.hide_viewport = True
         return
@@ -381,23 +428,12 @@ def update_onion(self, context):
 
     gpl = ob.data.layers
     if not [l for l in gpl if l.use_onion_skinning and not l.hide]: # Skip if no onion layers
+        _watch = None
         return
 
-    scene.gp_ons_setting['activated'] = False #Mtx avoid infinite recursion
-
-    ## Full delete-recreate of object seem to resolve the crash : edit stroke > change frame > ctrl-Z > Crash
     clean_peels()
 
     op_col, peel_col = create_peel_col(bpy.context)
-
-    ## create/assign a dummy (try resolve crash edit stroke > change frame > using ctrl-Z)
-    dummy = bpy.data.grease_pencils.get('.dummy')
-    if not dummy:
-        dummy = bpy.data.grease_pencils.new('.dummy')
-    for o in reversed(peel_col.all_objects):
-        old = o.data
-        o.data = dummy # no need to delete old data, "garbage collected" at update end
-        bpy.data.grease_pencils.remove(old)
 
     op_col.hide_viewport = False
 
@@ -424,10 +460,13 @@ def update_onion(self, context):
     used = []
     layers = []
 
-    ## calculate all frame index by layer once      
+    set_watch(ob, cur_frame)
+
+    ## calculate all frame index by layer once
     for l in gpl:
         if not l.use_onion_skinning or l.hide:
             continue
+
         if settings.keyframe_type == 'ALL':
             frames = [f for f in l.frames]
         else: # filtered
@@ -446,23 +485,37 @@ def update_onion(self, context):
 
     if not layers:
         peel_col.hide_viewport = True
-        settings['activated'] = True
         return
         
     count = 0
     for num in [-i for i in range(1,gprev+1)] + [i for i in range(1,gnext+1)]:
         absnum = abs(num)
 
-        # get / create the peel object
+        ## Get / create the peel object and data. Peels are reused and refilled in place
+        ## creating/removing IDs outside undo push (ex: from handlers) corrupts undo stack and crashes on ctrl+Z
         peel_name = f'{peelname} {num}'
         peel = op_col.all_objects.get(peel_name)
 
-        data = bpy.data.grease_pencils.new(peel_name)
-        # data.pixel_factor = ob.data.pixel_factor # gpv2
-        
+        if not peel:
+            data = bpy.data.grease_pencils.new(peel_name)
+            peel = bpy.data.objects.new(peel_name, data)
+            peel.hide_select = True
+            peel.use_grease_pencil_lights = False
+            peel_col.objects.link(peel)
+        elif peel.data is None or peel.data.users > 1:
+            ## Shared data ('.dummy' from older versions)
+            peel.data = bpy.data.grease_pencils.new(peel_name)
+        data = peel.data
+
+        ## Clear previous content
+        for l in reversed(data.layers[:]):
+            data.layers.remove(l)
+
         ## Get same material stack (gpv3: Tint color do not show in Solid view)
-        for i, m in enumerate(ob.data.materials):
-            data.materials.append(m)
+        if list(data.materials) != list(ob.data.materials):
+            data.materials.clear()
+            for m in ob.data.materials:
+                data.materials.append(m)
         ## peel_mat : Create colored materal stack
         # for i, m in enumerate(ob.data.materials):
         #     if not m: # Replicate empty slot 
@@ -475,15 +528,6 @@ def update_onion(self, context):
         #     elif m.grease_pencil.show_fill:
         #         mat = bpy.data.materials.get(f'.onion_peel_prev_fill' if num < 0 else '.onion_peel_next_fill')
         #     data.materials.append(mat)
-
-        if not peel:
-            peel = bpy.data.objects.new(peel_name, data)
-            peel.hide_select = True
-            peel.use_grease_pencil_lights = False
-            peel_col.objects.link(peel)
-        
-        else:
-            peel.data = data
 
         peel.show_in_front = ob.show_in_front
 
@@ -557,31 +601,104 @@ def update_onion(self, context):
     if settings.world_space:
         context.scene.frame_set(cur_frame)
     
-    # Delete too much peels
+    # Delete too much peels (peel number changed)
     for o in reversed(peel_col.objects):
         if o not in used:
+            data = o.data
             bpy.data.objects.remove(o)
-            continue
+            if data and not data.users:
+                bpy.data.grease_pencils.remove(data)
 
     # reset visibility of peels items that are out of peels range
+    # only when needed: each assignment triggers update_opacity, even with the same value (added 'and not f.visibility')
     for i, f in enumerate(settings.neg_frames):
-        if i > gprev:
+        if i > gprev and not f.visibility:
             f.visibility = True
     for i, f in enumerate(settings.pos_frames):
-        if i > gnext:
+        if i > gnext and not f.visibility:
             f.visibility = True
 
-    # Clear unused old peel data
+    # Clear unused old peel data (only left by older versions)
     for gp in bpy.data.grease_pencils[:]:
-        if not gp.users and gp.name.startswith('.peel'):
+        if not gp.users and gp.name.startswith(('.peel', '.dummy')):
             bpy.data.grease_pencils.remove(gp)
 
-    scene.gp_ons_setting['activated'] = True #Mtx avoid infinite recursion
     op_col.hide_viewport = peel_col.hide_viewport = False
     
     # Hide other objects onions (show only active object onion)
     for c in op_col.children:
         c.hide_viewport = c is not peel_col
+
+def set_watch(ob, frame):
+    """Store onion layers without key at frame (held frame): where a key can be created without frame change (auto-key)"""
+    global _watch
+    held_layers = []
+    for l in ob.data.layers:
+        if not l.use_onion_skinning or l.hide:
+            continue
+        current = l.current_frame()
+        if current is None or current.frame_number != frame:
+            held_layers.append(l.name)
+    _watch = (ob.name, frame, held_layers) if held_layers else None
+
+@persistent
+def refresh_after_undo(*args):
+    """undo/redo: peels are part of the undo data, stepping back before their creation removes them
+    (a saved state has none: they are deleted on save). Rebuild from the restored state, which also
+    re-evaluates the watched layers (keys restored by undo are not new keys, but later ones must trigger)"""
+    global _watch, _undo_refresh
+    scene = bpy.context.scene
+    ob = bpy.context.object
+    if (not scene.gp_ons_setting.activated
+            or not ob or ob.type != 'GREASEPENCIL' or ob.name.startswith('.peel')):
+        _watch = None
+        _undo_refresh = False
+        return
+    ## Refresh at the next depsgraph update, not here: matrices are not evaluated yet at this point
+    ## (they read as identity, placing the peels at world origin without depth offset).
+    ## A view_layer.update() would fix it but costs a full scene evaluation on every undo
+    _undo_refresh = True
+
+@persistent
+def check_new_key(scene, depsgraph):
+    """depsgraph_update_post: refresh when a key is created on a held frame without frame change (auto-key).
+    Called very often, so bail out as early and cheaply as possible
+    """
+    global _undo_refresh
+    if _undo_refresh:
+        ## matrices are evaluated at this point (see refresh_after_undo)
+        _undo_refresh = False
+        if scene.gp_ons_setting.activated:
+            scene.gp_ons_setting.frame_prev = -9999 # force (same frame as before the undo)
+            update_onion(scene, depsgraph)
+            return
+
+    if _watch is None:
+        return
+    if not depsgraph.id_type_updated('GREASEPENCIL_V3'): # 'GREASEPENCIL' is legacy (annotations)
+        return
+    if not scene.gp_ons_setting.activated:
+        return
+
+    ob_name, frame, layer_names = _watch
+    if scene.frame_current != frame:
+        return
+    ob = bpy.context.object
+    if not ob or ob.name != ob_name:
+        return
+
+    for name in layer_names:
+        layer = ob.data.layers.get(name)
+        if not layer:
+            continue
+        current = layer.current_frame()
+        if current and current.frame_number == frame:
+            ## Refresh right away, even during a stroke/transform (key is created at operator start).
+            ## Waiting for the operator end is unreliable: transform confirm sends no further depsgraph update.
+            ## Safe for undo since peels are refilled in place (no ID creation)
+            scene.gp_ons_setting.frame_prev = -9999
+            update_onion(scene, depsgraph)
+            return
 
 def update_opacity(self, context):
     settings = context.scene.gp_ons_setting
