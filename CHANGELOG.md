@@ -1,5 +1,10 @@
 # Changelog
 
+4.0.0
+
+- added: now compatible with autokey
+- fixed: some case that could lead to crashes 
+
 3.1.0
 
 - added: GP modifier are transfered on the peel (possible to disable transfer in preferences)
