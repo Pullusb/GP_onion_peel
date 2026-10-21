@@ -6,8 +6,8 @@ import random
 import numpy as np
 from . import preferences
 
-## Held frames watched for new key creation without frame change (auto-key)
-## (ob_name, frame_number, [layer_names]) or None
+## State watched between refreshes, to detect changes that need one (see check_new_key)
+## (ob_name, frame_number, [held_layer_names], layer_state) or None
 _watch = None
 
 ## True while peels are being rebuilt (re-entrancy guard)
@@ -428,7 +428,8 @@ def build_peels(self, context):
 
     gpl = ob.data.layers
     if not [l for l in gpl if l.use_onion_skinning and not l.hide]: # Skip if no onion layers
-        _watch = None
+        ## still watch the flags: re-enabling a layer needs a refresh
+        _watch = (ob.name, scene.frame_current, [], get_layer_state(ob))
         return
 
     clean_peels()
@@ -629,8 +630,15 @@ def build_peels(self, context):
     for c in op_col.children:
         c.hide_viewport = c is not peel_col
 
+def get_layer_state(ob):
+    """Layer flags that change what the peels show (toggled from the UI or by operators)"""
+    return tuple((l.name, l.hide, l.use_onion_skinning) for l in ob.data.layers)
+
 def set_watch(ob, frame):
-    """Store onion layers without key at frame (held frame): where a key can be created without frame change (auto-key)"""
+    """Store what needs to be watched until the next refresh:
+    - onion layers without key at frame (held frame): a key can be created there without frame change (auto-key)
+    - layer flags: visibility and onion skinning toggles
+    """
     global _watch
     held_layers = []
     for l in ob.data.layers:
@@ -639,7 +647,7 @@ def set_watch(ob, frame):
         current = l.current_frame()
         if current is None or current.frame_number != frame:
             held_layers.append(l.name)
-    _watch = (ob.name, frame, held_layers) if held_layers else None
+    _watch = (ob.name, frame, held_layers, get_layer_state(ob))
 
 @persistent
 def refresh_after_undo(*args):
@@ -661,7 +669,8 @@ def refresh_after_undo(*args):
 
 @persistent
 def check_new_key(scene, depsgraph):
-    """depsgraph_update_post: refresh when a key is created on a held frame without frame change (auto-key).
+    """depsgraph_update_post: refresh on changes that send no frame change, i.e. a key created by auto-key
+    on a held frame, or a layer visibility / onion skinning toggle.
     Called very often, so bail out as early and cheaply as possible
     """
     global _undo_refresh
@@ -680,11 +689,17 @@ def check_new_key(scene, depsgraph):
     if not scene.gp_ons_setting.activated:
         return
 
-    ob_name, frame, layer_names = _watch
+    ob_name, frame, layer_names, layer_state = _watch
     if scene.frame_current != frame:
         return
     ob = bpy.context.object
     if not ob or ob.name != ob_name:
+        return
+
+    ## layer visibility or onion skinning toggled: the peels must follow
+    if get_layer_state(ob) != layer_state:
+        scene.gp_ons_setting.frame_prev = -9999
+        update_onion(scene, depsgraph)
         return
 
     for name in layer_names:
