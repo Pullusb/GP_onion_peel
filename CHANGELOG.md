@@ -1,5 +1,10 @@
 # Changelog
 
+4.0.1
+
+- added: refresh when toggling `visibility` or `use_onion_skin` on a GP layer
+- fixed: Bug with empty keys and single drawings
+
 4.0.0
 
 - added: now compatible with autokey

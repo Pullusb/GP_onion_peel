@@ -349,12 +349,17 @@ def copy_frame_at(source_frame, layer, frame_number):
     source_drawing = source_frame.drawing
 
     frame = layer.frames.new(frame_number)
-    ## curve_offsets: one start index per stroke + total point count (no per-stroke python wrappers)
-    offsets = np.empty(len(source_drawing.curve_offsets), dtype=np.int32)
-    source_drawing.curve_offsets.foreach_get('value', offsets)
-    ## Directly get offsets for later reuse, instead of old: if not len(source_drawing.strokes)
-    if len(offsets) < 2:
+    if not source_drawing:
         return
+
+    ## Skip empty drawing: it has no curve_offsets data (though a length of 1 is reported)
+    num_strokes = len(source_drawing.strokes)
+    if not num_strokes:
+        return
+
+    ## curve_offsets: one start index per stroke + total point count (no per-stroke python wrappers)
+    offsets = np.empty(num_strokes + 1, dtype=np.int32)
+    source_drawing.curve_offsets.foreach_get('value', offsets)
 
     dr = frame.drawing
     ## Add all strokes at once with list of point numbers
