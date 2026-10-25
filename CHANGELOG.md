@@ -1,5 +1,9 @@
 # Changelog
 
+4.1.0
+
+- added: support of fade inactive layers on onion skinning
+
 4.0.1
 
 - added: refresh when toggling `visibility` or `use_onion_skin` on a GP layer

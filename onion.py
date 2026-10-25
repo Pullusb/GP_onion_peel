@@ -41,6 +41,28 @@ def clear_native_overlay():
             if area.type == 'VIEW_3D':
                 area.spaces[0].overlay.use_gpencil_onion_skin = False
 
+def get_view3d_overlay():
+    """Overlay settings of the current 3D view
+    return first 3D area found if not current area
+    None if there is no 3D view
+    """
+    area = getattr(bpy.context, 'area', None)
+    if area and area.type == 'VIEW_3D':
+        return area.spaces.active.overlay
+    for window in bpy.context.window_manager.windows:
+        for area in window.screen.areas:
+            if area.type == 'VIEW_3D':
+                return area.spaces[0].overlay
+
+def get_layer_fade():
+    """Opacity multiplier to apply to peels of inactive layers, following the viewport
+    'Fade Inactive Layers' overlay (1.0 when disabled: no fade)
+    """
+    overlay = get_view3d_overlay()
+    if not overlay or not overlay.use_gpencil_fade_layers:
+        return 1.0
+    return overlay.gpencil_fade_layer
+
 def get_collection_childs_recursive(col, cols=[]):
     for sub in col.children:
         if sub not in cols:
@@ -451,6 +473,9 @@ def build_peels(self, context):
     cur_frame = scene.frame_current
     settings = scene.gp_ons_setting
     opacity_factor = settings.o_general / 100
+    layer_fade = get_layer_fade()
+    active_layer = ob.data.layers.active
+    active_layer_name = active_layer.name if active_layer else None
     gprev = settings.before_num
     gnext = settings.after_num
 
@@ -572,6 +597,8 @@ def build_peels(self, context):
             f = copy_frame_at(mark, nl, cur_frame)
             nl.use_lights = False
             nl.opacity = fsetting.opacity / 100 * opacity_factor
+            if layer_fade < 1.0 and info != active_layer_name:
+                nl.opacity *= layer_fade # viewport 'Fade Inactive Layers' overlay
             # COLOR
             if peel['index'] < 0:
                 nl.tint_color = settings.before_color # ob.data.before_color
@@ -636,8 +663,13 @@ def build_peels(self, context):
         c.hide_viewport = c is not peel_col
 
 def get_layer_state(ob):
-    """Layer flags that change what the peels show (toggled from the UI or by operators)"""
-    return tuple((l.name, l.hide, l.use_onion_skinning) for l in ob.data.layers)
+    """Everything about the layers that changes what the peels show: flags toggled from the UI
+    or by operators, plus the active layer when inactive ones are faded by the overlay"""
+    fade = get_layer_fade()
+    active = ob.data.layers.active
+    return (tuple((l.name, l.hide, l.use_onion_skinning) for l in ob.data.layers),
+            active.name if (active and fade < 1.0) else None,
+            fade)
 
 def set_watch(ob, frame):
     """Store what needs to be watched until the next refresh:
@@ -731,6 +763,9 @@ def update_opacity(self, context):
         return
 
     opacity_factor = settings.o_general / 100
+    layer_fade = get_layer_fade()
+    active_layer = context.object.data.layers.active
+    active_layer_name = active_layer.name if active_layer else None
 
     for o in peel_col.objects:
         num = o['index']
@@ -743,10 +778,12 @@ def update_opacity(self, context):
 
         if not fsetting.opacity:
             continue
-        
+
         # Layer settings
         for l in o.data.layers:
             l.opacity = fsetting.opacity / 100 * opacity_factor
+            if layer_fade < 1.0 and l.name != active_layer_name:
+                l.opacity *= layer_fade # viewport 'Fade Inactive Layers' overlay
 
 def update_peel_color(self, context):
     settings = context.scene.gp_ons_setting
