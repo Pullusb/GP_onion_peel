@@ -664,15 +664,12 @@ def build_peels(self, context):
     for c in op_col.children:
         c.hide_viewport = c is not peel_col
 
-def is_onion_layer(layer):
-    """Layer is visible and uses onion skinning, parent groups included
+def is_onion_layer(node):
+    """Layer (or group) is visible and uses onion skinning, parent groups included
     (a hidden group does not change its layers own flags)"""
-    node = layer
-    while node:
-        if node.hide or not node.use_onion_skinning:
-            return False
-        node = node.parent_group
-    return True
+    if node is None: # above top level
+        return True
+    return not node.hide and node.use_onion_skinning and is_onion_layer(node.parent_group)
 
 def get_layer_state(ob):
     """Everything about the layers that changes what the peels show: flags toggled from the UI
