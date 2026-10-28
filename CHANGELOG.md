@@ -1,5 +1,11 @@
 # Changelog
 
+4.1.1
+
+- fixed: material slots linked to object instead of data are replicated on peels
+- fixed: layer groups visibility and onion skinning toggle are respected
+
+
 4.1.0
 
 - added: support of fade inactive layers on onion skinning

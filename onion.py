@@ -454,7 +454,7 @@ def build_peels(self, context):
 
 
     gpl = ob.data.layers
-    if not [l for l in gpl if l.use_onion_skinning and not l.hide]: # Skip if no onion layers
+    if not [l for l in gpl if is_onion_layer(l)]: # Skip if no onion layers
         ## still watch the flags: re-enabling a layer needs a refresh
         _watch = (ob.name, scene.frame_current, [], get_layer_state(ob))
         return
@@ -495,7 +495,7 @@ def build_peels(self, context):
 
     ## calculate all frame index by layer once
     for l in gpl:
-        if not l.use_onion_skinning or l.hide:
+        if not is_onion_layer(l):
             continue
 
         if settings.keyframe_type == 'ALL':
@@ -664,12 +664,23 @@ def build_peels(self, context):
     for c in op_col.children:
         c.hide_viewport = c is not peel_col
 
+def is_onion_layer(layer):
+    """Layer is visible and uses onion skinning, parent groups included
+    (a hidden group does not change its layers own flags)"""
+    node = layer
+    while node:
+        if node.hide or not node.use_onion_skinning:
+            return False
+        node = node.parent_group
+    return True
+
 def get_layer_state(ob):
     """Everything about the layers that changes what the peels show: flags toggled from the UI
     or by operators, plus the active layer when inactive ones are faded by the overlay"""
     fade = get_layer_fade()
     active = ob.data.layers.active
     return (tuple((l.name, l.hide, l.use_onion_skinning) for l in ob.data.layers),
+            tuple((g.name, g.hide, g.use_onion_skinning) for g in ob.data.layer_groups),
             active.name if (active and fade < 1.0) else None,
             fade)
 
@@ -681,7 +692,7 @@ def set_watch(ob, frame):
     global _watch
     held_layers = []
     for l in ob.data.layers:
-        if not l.use_onion_skinning or l.hide:
+        if not is_onion_layer(l):
             continue
         current = l.current_frame()
         if current is None or current.frame_number != frame:
