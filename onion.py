@@ -543,9 +543,11 @@ def build_peels(self, context):
             data.layers.remove(l)
 
         ## Get same material stack (gpv3: Tint color do not show in Solid view)
-        if list(data.materials) != list(ob.data.materials):
+        ## Use slot material (resolve slots linked to object instead of data)
+        src_materials = [slot.material for slot in ob.material_slots]
+        if list(data.materials) != src_materials:
             data.materials.clear()
-            for m in ob.data.materials:
+            for m in src_materials:
                 data.materials.append(m)
         ## peel_mat : Create colored materal stack
         # for i, m in enumerate(ob.data.materials):
